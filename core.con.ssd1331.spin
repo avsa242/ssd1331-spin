@@ -10,7 +10,7 @@
 }
 
 CON
-
+'' Register map
     CMD_DRAWLINE                = $21
     CMD_DRAWRECT                = $22
     CMD_COPY                    = $23
@@ -45,13 +45,16 @@ CON
     CMD_PRECHARGELEVEL          = $BB
     CMD_VCOMH                   = $BE
 
-    CMD_SET_VERT_SCROLL_AREA    = $A3
-    CMD_RIGHT_HORIZ_SCROLL      = $26
-    CMD_LEFT_HORIZ_SCROLL       = $27
-    CMD_VERTRIGHTHORIZSCROLL    = $29
-    CMD_VERTLEFTHORIZSCROLL     = $2A
+    CMD_SET_VERT_SCROLL_AREA    = $A3'XXX
+    CMD_RIGHT_HORIZ_SCROLL      = $26'XXX
+    CMD_LEFT_HORIZ_SCROLL       = $27'XXX
+    CMD_VERTRIGHTHORIZSCROLL    = $29'XXX
+    CMD_VERTLEFTHORIZSCROLL     = $2A'XXX
 
     CMD_NOP                     = $E3
+
+'' Other constants
+    SEL_EXTERNAL_VCC            = $8E
 
 PUB Null
 '' This is not a top-level object

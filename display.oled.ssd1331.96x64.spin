@@ -1,7 +1,9 @@
 CON
+' Code size
 ' orig              - 15476
 ' orig no bitmap    -  3008 = goal
-' current           -  3260 +
+' 1st               -  3260 +
+' current           -  3804 +
 
 ' Define colors
 Black           = $0000     
@@ -65,78 +67,27 @@ PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN)
     High (RST)
     
     '  Initialization Sequence
-'    ssd1331_command(SSD1331#CMD_DISPLAYOFF)     ' $AE
     EnableDisplay (FALSE)
-
-'    ssd1331_command(ssd1331#CMD_SETREMAP)       ' $A0
     MirrorH (FALSE)
-'    ssd1331_command($60)                       ' RGB Color
-
-'    ssd1331_command(ssd1331#CMD_STARTLINE)      ' $A1
-'    ssd1331_command($00)
     SetStartLine (0)
-
-'    ssd1331_command(ssd1331#CMD_DISPLAYOFFSET)  ' $A2
-'    ssd1331_command($00)
     SetVOffset (0)
-
-'    ssd1331_command(ssd1331#CMD_NORMALDISPLAY)  ' $A4
     SetDispMode (0)
-
-'    ssd1331_command(ssd1331#CMD_SETMULTIPLEX)   ' $A8
-'    ssd1331_command($3F)                       ' $3F 1/64 duty
     SetMuxRatio (64)
-
-    ssd1331_command(ssd1331#CMD_SETMASTER)      ' $AD
-    ssd1331_command($8E)
-
-'    ssd1331_command(ssd1331#CMD_POWERMODE)      ' $B0
-'    ssd1331_command($0B)
-    PowerSave (TRUE)
-
-    ssd1331_command(ssd1331#CMD_PRECHARGE)      ' $B1
-    ssd1331_command($31)
-
-    ssd1331_command(ssd1331#CMD_CLOCKDIV)       ' $B3
-    ssd1331_command($F0)                       ' 7:4 = Oscillator Frequency, 3:0 = CLK Div Ratio (A[3:0]+1 = 1..16)
-
-    ssd1331_command(ssd1331#CMD_PRECHARGEA)     ' $8A
-    ssd1331_command($64)
-
-    ssd1331_command(ssd1331#CMD_PRECHARGEB)     ' $8B
-    ssd1331_command($78)
-
-    ssd1331_command(ssd1331#CMD_PRECHARGEA)     ' $8C
-    ssd1331_command($64)
-
-    ssd1331_command(ssd1331#CMD_PRECHARGELEVEL) ' $BB
-    ssd1331_command($3A)
-
-    ssd1331_command(ssd1331#CMD_VCOMH)          ' $BE
-    ssd1331_command($3E)
-
-    ssd1331_command(ssd1331#CMD_MASTERCURRENT)  ' $87
-    ssd1331_command($06)
-
-    ssd1331_command(ssd1331#CMD_CONTRASTA)      ' $81
-    ssd1331_command($91)
-
-    ssd1331_command(ssd1331#CMD_CONTRASTB)      ' $82
-    ssd1331_command($50)
-
-    ssd1331_command(ssd1331#CMD_CONTRASTC)      ' $83
-    ssd1331_command($7D)
-'    ssd1331_command(ssd1331#CMD_DISPLAYON)      '--turn on oled panel
+    SetMasterCfg
+    PowerSave (FALSE)
+    SetPrecharge (1, 3)
+    SetClk (15, 1)
+    SetPrechargeSpd ($64, $78, $64)
+    SetPrechargeLev ($3A)
+    SetCOMDesLvl (83)
+    SetCurrentLimit (7)
+    SetContrastA ($91)
+    SetContrastB ($50)
+    SetContrastC ($7D)
     EnableDisplay (TRUE)
-    
-    ssd1331_command(ssd1331#CMD_SETCOLUMN)  ' Set X
-    ssd1331_command($0)
-    ssd1331_command(95)
-    ssd1331_command(ssd1331#CMD_SETROW)  ' Set Y
-    ssd1331_command($0)
-    ssd1331_command(63)    
-    
-    invertDisplay(False)
+    SetDisplayBounds (0, 0, 95, 63)
+
+    invertDisplay(FALSE)
     ' AutoUpdateOn
     clearDisplay
 
@@ -155,6 +106,129 @@ PUB LOW(Pin)
   ''Make a pin an output and drives it low
   dira[Pin]~~
   outa[Pin]~
+
+PUB SetMasterCfg
+
+    ssd1331_command(ssd1331#CMD_SETMASTER)      ' $AD
+    ssd1331_command(ssd1331#SEL_EXTERNAL_VCC)
+
+PUB InvertDisplay(enable)
+
+    case ||enable
+        0:
+            ssd1331_command(ssd1331#CMD_NORMALDISPLAY) 'a4
+        1:
+            ssd1331_command(ssd1331#CMD_INVERTDISPLAY) 'a7
+        OTHER:
+            return
+
+PUB SetDisplayBounds(xstart, ystart, xend, yend)
+
+    ifnot lookup(xstart: 0..95) or lookup(ystart: 0..63) or lookup(xend: 0..95) or lookup(yend: 0..63)
+        return
+
+    ssd1331_command(ssd1331#CMD_SETCOLUMN)  ' Set X
+    ssd1331_command(xstart)
+    ssd1331_command(xend)
+    ssd1331_command(ssd1331#CMD_SETROW)  ' Set Y
+    ssd1331_command(ystart)
+    ssd1331_command(yend)
+
+PUB SetContrastA(level)
+
+    case level
+        0..255:
+        OTHER:
+            return
+
+    ssd1331_command(ssd1331#CMD_CONTRASTA)      ' $81
+    ssd1331_command(level)
+
+PUB SetContrastB(level)
+
+    case level
+        0..255:
+        OTHER:
+            return
+
+    ssd1331_command(ssd1331#CMD_CONTRASTB)      ' $82
+    ssd1331_command(level)
+
+PUB SetContrastC(level)
+
+    case level
+        0..255:
+        OTHER:
+            return
+
+    ssd1331_command(ssd1331#CMD_CONTRASTC)      ' $83
+    ssd1331_command(level)
+
+PUB SetCurrentLimit(sixteenths)
+
+    case sixteenths
+        1..16:
+            sixteenths -= 1
+        OTHER:
+            return
+
+    ssd1331_command(ssd1331#CMD_MASTERCURRENT)  ' $87
+    ssd1331_command(sixteenths)
+
+PUB SetCOMDesLvl(volts_pct_Vcc)
+
+    case volts_pct_Vcc
+        44: volts_pct_Vcc := $00
+        52: volts_pct_Vcc := $10
+        61: volts_pct_Vcc := $20
+        71: volts_pct_Vcc := $30
+        83: volts_pct_Vcc := $3E
+        OTHER:
+            return
+    ssd1331_command(ssd1331#CMD_VCOMH)          ' $BE
+    ssd1331_command(volts_pct_Vcc)
+
+PUB SetPrechargeLev(percent_Vcc)
+'   1A
+'00011010
+    case percent_Vcc
+        0..62:
+            percent_Vcc &= %00111110
+        OTHER:
+            return
+
+    ssd1331_command(ssd1331#CMD_PRECHARGELEVEL) ' $BB
+    ssd1331_command(percent_Vcc)
+        
+PUB SetPrechargeSpd(color_a, color_b, color_c)
+
+    ifnot lookup(color_a: 0..255) or lookup(color_b: 0..255) or lookup(color_c: 0..255)
+        return
+
+    ssd1331_command(ssd1331#CMD_PRECHARGEA)     ' $8A
+    ssd1331_command(color_a)
+
+    ssd1331_command(ssd1331#CMD_PRECHARGEB)     ' $8B
+    ssd1331_command(color_b)
+
+    ssd1331_command(ssd1331#CMD_PRECHARGEC)     ' $8C WAS ..._PRECHARGEA -mistake?
+    ssd1331_command(color_c)
+    
+PUB SetClk(osc_freq, divisor)
+
+    ifnot lookdown(osc_freq: 0..15) or not lookdown(divisor: 1..16)
+        return
+    
+    ssd1331_command(ssd1331#CMD_CLOCKDIV)       ' $B3
+    ssd1331_command((osc_freq << 4) | (divisor-1))                       ' 7:4 = Oscillator Frequency, 3:0 = CLK Div Ratio (A[3:0]+1 = 1..16)
+
+PUB SetPrecharge(phase1_clks, phase2_clks)
+
+    ifnot lookdown(phase1_clks: 1..15) or not lookdown(phase2_clks: 1..15)
+        return
+    
+    ssd1331_command(ssd1331#CMD_PRECHARGE)      ' $B1
+    ssd1331_command((phase2_clks << 4) | (phase1_clks))
 
 PUB PowerSave(enable) | tmp
 
@@ -224,13 +298,6 @@ PUB MirrorH(enabled)
     ssd1331_command(ssd1331#CMD_SETREMAP)
     ssd1331_command(%01 << 6 | 1 << 5 | 0 << 4| 0 << 3 | 0 << 2 | enabled << 1 | 0)
 
-PUB invertDisplay(i)
-  'This in an OLED command that inverts the display. 
-
-  if (i==True)
-    ssd1331_command(ssd1331#CMD_INVERTDISPLAY)
-  else
-    ssd1331_command(ssd1331#CMD_NORMALDISPLAY)
 
 PUB startScrollRight(scrollStart, scrollStop)
   ''startscrollright
@@ -512,12 +579,6 @@ PUB write5x7Char(ch,row,col,RGB,BRGB)|i,j,mask,r
     ssd1331_command($60)                       ' RGB Color
 
      
-PUB AutoUpdateOn                'With AutoUpdate On the display is updated for you
-  AutoUpdate := TRUE
-
-PUB AutoUpdateOff               'With AutoUpdate Off the system is faster. Update the display when you want
-  AutoUpdate := FALSE
-
 PUB GetDisplayHeight            'For things that need it
   return displayHeight
 

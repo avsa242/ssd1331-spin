@@ -20,25 +20,29 @@ VAR
 
     byte _ser_cog, _oled_cog
 
-PUB Main | lcnt
+PUB Main | lcnt, x, y, col, acc
 
     Setup
-'    oled.line (0, 0, 95, 63, oled#Green)
     OLED.clearDisplay
-    OLED.AutoUpdateOff
+'    OLED.AutoUpdateOff
 
-    OLED.clearDisplay
     OLED.clearDisplay  
-    lcnt := $FFFF
-'    repeat
-        OLED.line(0,0,95,63,?lcnt)
+    lcnt := 0
+    col := 1
+    repeat acc from 1 to 64
+        repeat x from 0 to 95
+            OLED.line(x, 0, 95-x, 63, col)
+            col += acc
+        repeat y from 0 to 63
+            OLED.line(95, y, 0, 63-y, col)
+            col += acc
 
-    OLED.line(0,63,95,0,OLED#Green)
-    OLED.boxFillOn
-    OLED.box($2,$3,$15,$12,OLED#Yellow,OLED#Red)
-    OLED.boxFillOff 
-    OLED.box(28,22,68,42,OLED#White,OLED#Black)
     OLED.copy(28,22,68,42,0,43)  
+    
+    ser.Str (string("width height", ser#NL))
+    ser.Dec ( oled.GetDisplayWidth)
+    ser.NewLine
+    ser.Dec ( oled.GetDisplayHeight)
     
     repeat
 
