@@ -43,15 +43,11 @@ CON
     CMD_PRECHARGEB              = $8B
     CMD_PRECHARGEC              = $8C
     CMD_PRECHARGELEVEL          = $BB
+    CMD_NOP1                    = $BC
+    CMD_NOP2                    = $BD
     CMD_VCOMH                   = $BE
 
-    CMD_SET_VERT_SCROLL_AREA    = $A3'XXX
-    CMD_RIGHT_HORIZ_SCROLL      = $26'XXX
-    CMD_LEFT_HORIZ_SCROLL       = $27'XXX
-    CMD_VERTRIGHTHORIZSCROLL    = $29'XXX
-    CMD_VERTLEFTHORIZSCROLL     = $2A'XXX
-
-    CMD_NOP                     = $E3
+    CMD_NOP3                    = $E3
 
 '' Other constants
     SEL_EXTERNAL_VCC            = $8E

@@ -89,7 +89,7 @@ PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN)
 
     invertDisplay(FALSE)
     ' AutoUpdateOn
-    clearDisplay
+    Clear
 
 PUB stop
 '' Stop SPI Engine - frees a cog
@@ -97,15 +97,15 @@ PUB stop
        cogstop(cog~ - 1)
     command~
 
-PUB HIGH(Pin)
+PUB High(Pin)
   ''Make a pin an output and drives it high
-  dira[Pin]~~
-  outa[Pin]~~
+    dira[Pin]~~
+    outa[Pin]~~
          
-PUB LOW(Pin)
+PUB Low(Pin)
   ''Make a pin an output and drives it low
-  dira[Pin]~~
-  outa[Pin]~
+    dira[Pin]~~
+    outa[Pin]~
 
 PUB SetMasterCfg
 
@@ -298,83 +298,71 @@ PUB MirrorH(enabled)
     ssd1331_command(ssd1331#CMD_SETREMAP)
     ssd1331_command(%01 << 6 | 1 << 5 | 0 << 4| 0 << 3 | 0 << 2 | enabled << 1 | 0)
 
+PUB ScrollDiag(horiz_step, vert_start, total_rows, vert_step, time_int)
 
-PUB startScrollRight(scrollStart, scrollStop)
-  ''startscrollright
-  ''Activate a right handed scroll for rows start through stop
-  ''Hint, the display is 16 rows tall. To scroll the whole display, run:
-  ''display.scrollright($00, $0F) 
-  ssd1331_command(ssd1331#CMD_RIGHT_HORIZ_SCROLL)
-  ssd1331_command($00)
-  ssd1331_command(scrollStart)
-  ssd1331_command($00)
-  ssd1331_command(scrollStop)
-  ssd1331_command($01)
-  ssd1331_command($FF)
-  ssd1331_command(ssd1331#CMD_SCROLLSTART)
+    ifnot lookup(horiz_step: 1..95) or lookup(vert_start: 0..63) or lookup(total_rows: 0..63) or lookup(vert_step: 1..63) or lookup(time_int: 6, 10, 100, 200)
+        return
+    time_int := lookdownz(time_int: 6, 10, 100, 200)
+    ssd1331_command(ssd1331#CMD_SCROLLSETUP)'27
+    ssd1331_command(horiz_step)                          '01
+    ssd1331_command(vert_start)                  '00
+    ssd1331_command(total_rows)                          '40
+    ssd1331_command(vert_step)                          '01
+    ssd1331_command(time_int)                          '01
+    ssd1331_command(ssd1331#CMD_SCROLLSTART)      '2F
 
-PUB startScrollLeft(scrollStart, scrollStop)
-  ''startscrollleft
-  ''Activate a right handed scroll for rows start through stop
-  ''Hint, the display is 16 rows tall. To scroll the whole display, run:
-  ''display.scrollright($00, $0F) 
-  ssd1331_command(ssd1331#CMD_LEFT_HORIZ_SCROLL)
-  ssd1331_command($00)
-  ssd1331_command(scrollStart)
-  ssd1331_command($00)
-  ssd1331_command(scrollStop)
-  ssd1331_command($01)
-  ssd1331_command($FF)
-  ssd1331_command(ssd1331#CMD_SCROLLSTART)
+PUB ScrollHoriz(start_col, start_row, total_rows, time_int)
 
-PUB startScrollDiagRight(scrollStart, scrollStop)
-  ''startscrolldiagright
-  ''Activate a diagonal scroll for rows start through stop
-  ''Hint, the display is 16 rows tall. To scroll the whole display, run:
-  ''display.scrollright($00, $0F) 
-  ssd1331_command(ssd1331#CMD_SET_VERT_SCROLL_AREA)      
-  ssd1331_command($00)
-  ssd1331_command(displayHeight)
-  ssd1331_command(ssd1331#CMD_VERTRIGHTHORIZSCROLL)
-  ssd1331_command($00)
-  ssd1331_command(scrollStart)
-  ssd1331_command($00)
-  ssd1331_command(scrollStop)
-  ssd1331_command($01)
-  ssd1331_command(ssd1331#CMD_SCROLLSTART)
+    case start_col
+        1..95:
+        OTHER:
+            return
+ 
+    case start_row
+        0..63:
+        OTHER:
+            return
+ 
+    case total_rows
+        1..64:
+        OTHER:
+            return
+ 
+    case time_int
+        6, 10, 100, 200:
+        OTHER:
+            return
 
-PUB startScrollDiagLeft(scrollStart, scrollStop)
-  ''startscrolldiagleft
-  ''Activate a diagonal scroll for rows start through stop
-  ''Hint, the display is 16 rows tall. To scroll the whole display, run:
-  ''display.scrollright($00, $0F) 
-  ssd1331_command(ssd1331#CMD_SET_VERT_SCROLL_AREA)      
-  ssd1331_command($00)
-  ssd1331_command(displayHeight)
-  ssd1331_command(ssd1331#CMD_VERTLEFTHORIZSCROLL)
-  ssd1331_command($00)
-  ssd1331_command(scrollStart)
-  ssd1331_command($00)
-  ssd1331_command(scrollStop)
-  ssd1331_command($01)
-  ssd1331_command(ssd1331#CMD_SCROLLSTART)
+    ssd1331_command(ssd1331#CMD_SCROLLSETUP)    '27
+    ssd1331_command(start_col)                  'A
+    ssd1331_command(start_row)                          'B
+    ssd1331_command(total_rows)                          'C
+    ssd1331_command(0)                          'D
+    ssd1331_command(lookdownz(time_int: 6, 10, 100, 200))'time_int)                   'E
+    ssd1331_command(ssd1331#CMD_SCROLLSTART)    '2F
 
-PUB stopScroll
+PUB ScrollVert(start_row, total_rows, scroll_step, time_int)
+
+    ssd1331_command(ssd1331#CMD_SCROLLSETUP)
+    ssd1331_command(0)
+    ssd1331_command(start_row)
+    ssd1331_command(total_rows)
+    ssd1331_command(scroll_step)
+    ssd1331_command(time_int)
+    ssd1331_command(ssd1331#CMD_SCROLLSTART)
+
+PUB StopScroll
   ''Stop the scroll
-  ssd1331_command(ssd1331#CMD_SCROLLSTOP)
+    ssd1331_command(ssd1331#CMD_SCROLLSTOP)
 
-PUB clearDisplay
-  ''Clearing the display means just writing zeroes to the screen buffer.
-'  bytefill(@buffer, 0, ((displayWidth*displayHeight)/8))
-'  UpdateDisplay 'Clearing the display ALWAYS updates the display
-   ssd1331_command(ssd1331#CMD_NOP) ' NOP
-   ssd1331_command($25) ' Clear Window
+PUB Clear
+
+   ssd1331_command(ssd1331#CMD_NOP3) ' NOP
+   ssd1331_command(ssd1331#CMD_CLEAR) ' Clear Window
    ssd1331_command(0) ' Start at Column 0
    ssd1331_command(0) ' Start at Row 0
    ssd1331_command(95) ' End at Column 95
-   ssd1331_command(127) ' End at Row 63
-   
-
+   ssd1331_command(63) ' End at Row 63
 
 {PUB PlotPoint(x, y, RG, GB)|pp
   ''Plot a point x,y on the screen. color is really just on or off (1 or 0)
@@ -390,13 +378,7 @@ PUB clearDisplay
     ssd1331_Data(GB)
 }      
 
-PRI swap(a,b) | t
-  ''Needed by line function below
-  t := long[a]
-  long[a] := long[b]
-  long[b] := t 
-
-PUB line(col0,row0,col1,row1,RGB)
+PUB Line(sx, sy, ex, ey, color)
   ''Draws a line on the screen
   ssd1331_command(ssd1331#CMD_SETCOLUMN)  ' Set X
   ssd1331_command($0)
@@ -405,94 +387,89 @@ PUB line(col0,row0,col1,row1,RGB)
   ssd1331_command($0)
   ssd1331_command(63)
 
-
   ssd1331_command(ssd1331#CMD_DRAWLINE)
-  ssd1331_command(col0)
-  ssd1331_command(row0)
-  ssd1331_command(col1)
-  ssd1331_command(row1)
-  ssd1331_command(R24bitColor(RGB))
-  ssd1331_command(G24bitColor(RGB))
-  ssd1331_command(B24bitColor(RGB))
+  ssd1331_command(sx)
+  ssd1331_command(sy)
+  ssd1331_command(ex)
+  ssd1331_command(ey)
+  ssd1331_command(R24bitColor(color))
+  ssd1331_command(G24bitColor(color))
+  ssd1331_command(B24bitColor(color))
 
 PUB boxFillOn
+
     BoxFillRevCopy := BoxFillRevCopy | %00001
 
 PUB boxFillOff
+
     BoxFillRevCopy := BoxFillRevCopy & %11110
 
 PUB RevCopyOn
+
     BoxFillRevCopy := BoxFillRevCopy | %10000
 
 PUB RevCopyOff
-    BoxFillRevCopy := BoxFillRevCopy & %01111        
-  
-PUB box(col0,row0,col1,row1,RGB,BRGB)
+
+    BoxFillRevCopy := BoxFillRevCopy & %01111
+
+PUB Box(sx, sy, ex, ey, boxcolor, fillcolor)
   ''Draw a box formed by the coordinates of a diagonal line
-  ssd1331_command(ssd1331#CMD_SETCOLUMN)  ' Set X
-  ssd1331_command($0)
-  ssd1331_command(95)
-  ssd1331_command(ssd1331#CMD_SETROW)  ' Set Y
-  ssd1331_command($0)
-  ssd1331_command(63)
-
-
+    ssd1331_command(ssd1331#CMD_SETCOLUMN)  ' Set X
+    ssd1331_command($0)
+    ssd1331_command(95)
+    ssd1331_command(ssd1331#CMD_SETROW)  ' Set Y
+    ssd1331_command($0)
+    ssd1331_command(63)
 
     ssd1331_command(ssd1331#CMD_FILL)
     ssd1331_command(BoxFillRevCopy)
     ssd1331_command(ssd1331#CMD_DRAWRECT)
-    ssd1331_command(col0)
-    ssd1331_command(row0)
-    ssd1331_command(col1)
-    ssd1331_command(row1)
-    ssd1331_command(R24bitColor(RGB))
-    ssd1331_command(G24bitColor(RGB))
-    ssd1331_command(B24bitColor(RGB))
-    ssd1331_command(R24bitColor(BRGB))
-    ssd1331_command(G24bitColor(BRGB))
-    ssd1331_command(B24bitColor(BRGB))
+    ssd1331_command(sx)
+    ssd1331_command(sy)
+    ssd1331_command(ex)
+    ssd1331_command(ey)
+    ssd1331_command(R24bitColor(boxcolor))
+    ssd1331_command(G24bitColor(boxcolor))
+    ssd1331_command(B24bitColor(boxcolor))
+    ssd1331_command(R24bitColor(fillcolor))
+    ssd1331_command(G24bitColor(fillcolor))
+    ssd1331_command(B24bitColor(fillcolor))
 
-PUB copy(col0,row0,col1,row1,col2,row2)
-  ''Draw a box formed by the coordinates of a diagonal line
-  ssd1331_command(ssd1331#CMD_SETCOLUMN)  ' Set X
-  ssd1331_command($0)
-  ssd1331_command(95)
-  ssd1331_command(ssd1331#CMD_SETROW)  ' Set Y
-  ssd1331_command($0)
-  ssd1331_command(63)
+PUB Copy(sx, sy, ex, ey, dest_x, dest_y)
 
-
-
-    ssd1331_command(ssd1331#CMD_FILL)
-    ssd1331_command(BoxFillRevCopy)
     ssd1331_command(ssd1331#CMD_COPY)
-    ssd1331_command(col0)
-    ssd1331_command(row0)
-    ssd1331_command(col1)
-    ssd1331_command(row1)
-    ssd1331_command(col2)
-    ssd1331_command(row2)
-    
+    ssd1331_command(sx)
+    ssd1331_command(sy)
+    ssd1331_command(ex)
+    ssd1331_command(ey)
+    ssd1331_command(dest_x)
+    ssd1331_command(dest_y)
+
 PUB RG16bitColor(RGB)
+
     return (RGB & $FF00) >> 8
-    
+
 PUB GB16bitColor(RGB)
+
     return RGB & $FF
 
 PUB R24bitColor(RGB)
+
     return (((RGB & $F800) >> 11) * 527 + 23 ) >> 6
-    
+
 PUB G24bitColor(RGB)
+
     return (((RGB & $7E0) >> 5)  * 259 + 33 ) >> 6
 
 PUB B24bitColor(RGB)
+
     return ((RGB & $1F) * 527 + 23 ) >> 6 
-   
+
 PUB write1x6String(str,len,col,row,RGB,BRGB)|i
   ''Write a string on the display starting at position zero (left)
   repeat i from 0 to len-1
     write16x32Char(byte[str][i],col + (!!i * 16),row,RGB,BRGB) 
-     
+
 PUB write16x32Char(ch,row,col,RGB,BRGB)|h,i,j,k,q,r,s,mask,cbase,cset,bset
 
   ssd1331_command(ssd1331#CMD_SETCOLUMN)  ' Set X
@@ -573,61 +550,23 @@ PUB write5x7Char(ch,row,col,RGB,BRGB)|i,j,mask,r
            ssd1331_Data(RG16bitColor(BRGB))
            ssd1331_Data(GB16bitColor(BRGB))
         mask:=mask<<1           
-        
 
     ssd1331_command(ssd1331#CMD_SETREMAP)       ' $A0
     ssd1331_command($60)                       ' RGB Color
 
-     
-PUB GetDisplayHeight            'For things that need it
-  return displayHeight
-
-PUB GetDisplayWidth             'For things that need it
-  return displayWidth
-
-PUB GetDisplayType              'For things that need it
-  return displayType
-
-PUB ssd1331_command(thecmd)|tmp 'Send a byte as a command to the display
+PUB ssd1331_command(cmd)|tmp 'Send a byte as a command to the display
   ''Write SPI command to the OLED
-  LOW(DC)
-  SHIFTOUT(DIN, CLK, CS ,@tmp, thecmd)   
+  Low(DC)
+  ShiftOut(DIN, CLK, CS, @tmp, cmd)
 
-PUB ssd1331_Data(thedata)|tmp   'Send a byte as data to the display
+PUB ssd1331_data(data)|tmp   'Send a byte as data to the display
   ''Write SPI data to the OLED
-  HIGH(DC)
-  SHIFTOUT(DIN, CLK, CS ,@tmp, thedata)   
+  High(DC)
+  ShiftOut(DIN, CLK, CS, @tmp, data)   
 
 PUB getBuffer                   'Get the address of the buffer for the display
 
   return @buffer
-
-PUB bars|i,tmp
-   tcount := 0
-  ssd1331_command(ssd1331#CMD_NOP) ' NOP
-  ssd1331_command(ssd1331#CMD_NOP) ' NOP
-  ssd1331_command(ssd1331#CMD_SETCOLUMN)  ' Set X
-  ssd1331_command($0)
-  ssd1331_command(95)
-  ssd1331_command(ssd1331#CMD_SETROW)  ' Set Y
-  ssd1331_command($0)
-  ssd1331_command(63)
-
-  
-  repeat until tcount > 2016
-    ssd1331_Data($F8)
-    ssd1331_Data($00)
-    tcount++
-  tcount :=0   
-  repeat until tcount > 2016
-    ssd1331_Data($7)
-    ssd1331_Data($E0)
-    tcount++
-  tcount :=0  
-  repeat until tcount > 2108
-    ssd1331_Data($0)
-    ssd1331_Data($1F)
-    tcount++
 
 PUB ShiftOut(Dpin, Cpin, CSpin, Bits, Value)             
 
@@ -638,9 +577,9 @@ PUB WriteBuff(Dpin, Cpin, CSpin, Bits, Addr)
     setcommand(2, @Dpin)
 
 PRI setcommand(cmd, argptr)
+
     command := cmd << 16 + argptr                       '' Write command and pointer
     repeat while command                                '' Wait for command to be cleared, signifying receipt
-
 
 DAT           org
 ''****************************** 

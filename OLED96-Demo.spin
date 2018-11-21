@@ -23,13 +23,11 @@ VAR
 PUB Main | lcnt, x, y, col, acc
 
     Setup
-    OLED.clearDisplay
-'    OLED.AutoUpdateOff
 
-    OLED.clearDisplay  
+    oled.Clear
     lcnt := 0
     col := 1
-    repeat acc from 1 to 64
+    repeat acc from 1 to 2
         repeat x from 0 to 95
             OLED.line(x, 0, 95-x, 63, col)
             col += acc
@@ -37,13 +35,10 @@ PUB Main | lcnt, x, y, col, acc
             OLED.line(95, y, 0, 63-y, col)
             col += acc
 
-    OLED.copy(28,22,68,42,0,43)  
-    
-    ser.Str (string("width height", ser#NL))
-    ser.Dec ( oled.GetDisplayWidth)
-    ser.NewLine
-    ser.Dec ( oled.GetDisplayHeight)
-    
+    oled.copy(28, 22, 68, 42, 0, 43)  
+'    oled.ScrollDiagLeft (2, 0, 64, 1, 0)'(horiz_step, vert_start, total_rows, vert_step, time_int)
+'    oled.ScrollVert (0, 64, 1, 0)'(start_row, total_rows, scroll_step, time_int)
+    oled.ScrollHoriz (1, 32, 31, 6)'(start_col, start_row, total_rows, time_int)
     repeat
 
 PUB Setup
@@ -51,13 +46,10 @@ PUB Setup
     repeat until _ser_cog := ser.Start (115_200)
     ser.Clear
     ser.Str (string("Serial terminal started", ser#NL))
-'    OLED.Init(CS,DC,DIN,CLK,RST)
     if _oled_cog := OLED.Start(CS, DC, DIN, CLK, RST)
         ser.Str (string("ssd1331 driver started", ser#NL))
-'        ser.Dec (_oled_cog)
     else
         ser.Str (string("ssd1331 driver failed to start - halting", ser#NL))
-'        ser.Dec (_oled_cog)
         oled.stop
         time.MSleep (500)
         ser.Stop
