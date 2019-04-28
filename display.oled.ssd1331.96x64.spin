@@ -81,6 +81,9 @@ PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN)
     SetPrechargeLev ($3A)
     SetCOMDesLvl (83)
     SetCurrentLimit (7)
+    SetContrastA ($fF)
+    SetContrastB ($fF)
+    SetContrastC ($fF)
     SetContrastA ($91)
     SetContrastB ($50)
     SetContrastC ($7D)
@@ -288,7 +291,7 @@ PUB EnableDisplay(enabled)
 
     ssd1331_command(ssd1331#CMD_DISPLAYOFF | enabled)
 
-PUB MirrorH(enabled)
+PUB MirrorH(enabled)'XXX separate out hardcoded values
 
     case ||enabled
         0, 1: enabled := ||enabled
@@ -556,154 +559,25 @@ PUB write5x7Char(ch,row,col,RGB,BRGB)|i,j,mask,r
 
 PUB ssd1331_command(cmd)|tmp 'Send a byte as a command to the display
   ''Write SPI command to the OLED
-  Low(DC)
-  ShiftOut(DIN, CLK, CS, @tmp, cmd)
+    Low(DC)
+    Low(CS)
+    spi.SHIFTOUT (DIN, CLK, spi#MSBFIRST, 8, cmd)'(Dpin, Cpin, Mode, Bits, Value)
+    High(CS)
+'  ShiftOut(DIN, CLK, CS, @tmp, cmd)
 
 PUB ssd1331_data(data)|tmp   'Send a byte as data to the display
   ''Write SPI data to the OLED
-  High(DC)
-  ShiftOut(DIN, CLK, CS, @tmp, data)   
+    High(DC)
+    Low(CS)
+    spi.SHIFTOUT (DIN, CLK, spi#MSBFIRST, 8, data)'(Dpin, Cpin, Mode, Bits, Value)
+    High(CS)
+'  ShiftOut(DIN, CLK, CS, @tmp, data)
 
 PUB getBuffer                   'Get the address of the buffer for the display
 
   return @buffer
 
-PUB ShiftOut(Dpin, Cpin, CSpin, Bits, Value)             
-
-    setcommand(1, @Dpin)
-
-PUB WriteBuff(Dpin, Cpin, CSpin, Bits, Addr)
-
-    setcommand(2, @Dpin)
-
-PRI setcommand(cmd, argptr)
-
-    command := cmd << 16 + argptr                       '' Write command and pointer
-    repeat while command                                '' Wait for command to be cleared, signifying receipt
-
-DAT           org
-''****************************** 
-'' SPI Engine - Command dispatch
-''******************************
-loop          rdlong  DataPin,        par         wz    '' Wait for command via par
-        if_z  jmp     #loop                             '' No command (0), keep looking
-              movd    :arg,           #arg0             '' Get 5 arguments ; arg0 to arg4
-              mov     ClkPin,         DataPin           ''    │
-              mov     DataVal,        #5                ''───┘
-:arg          rdlong  arg0,           ClkPin            '' mov arg
-              add     :arg,           d0                '' It adds 512 because that is a 1 for the destination field.
-                                                        '' This increments the destination to point at each of the
-                                                        '' arg destinations.
-              add     ClkPin,         #4                '' Main memory addresses go up by 4 (for long)
-              djnz    DataVal,        #:arg             '' Keep going until done
-
-              shr     DataPin,        #16               '' The command is the upper 16 bits. Slide it down to the lower 16 bits
-              cmp     DataPin,        #1          wz    '' Jump to the single SPI shift routine
-        if_z  jmp     #SHIFTONE_             
-              cmp     DataPin,        #2          wz    '' Jump to the write buffer routine
-        if_z  jmp     #WRITEBUFF_             
-
-              wrlong  zero,par                          ''     Zero command to signify command received
-NotUsed_      jmp     #loop                             '' 
-'################################################################################################################
-'Single OLED SPI shift routine
-SHIFTONE_                                               '' SHIFTONE Entry
-
-              mov     DataPin,        #1                '' Configure DataPin
-              shl     DataPin,        arg0                            
-              test    DataPin,        DataPin     wc        
-              muxc    dira,           DataPin
-              muxc    outa,           DataPin
-              mov     ClkPin,         #1                '' Configure ClockPin
-              shl     ClkPin,         arg1
-              test    ClkPin,         ClkPin      wc        
-              muxc    dira,           ClkPin
-              muxc    outa,           ClkPin
-              mov     CSelPin,        #1                '' Configure Chip Select
-              shl     CSelPin,        arg2              
-              test    CSelPin,        CSelPin     wc        
-              muxc    dira,           CSelPin
-              muxnc   outa,           CSelPin
-                                                        '' Send Data MSBFIRST
-              mov     DataVal,        arg4              '' Load DataValue
-              mov     DataMask,       #%10000000        '' Create MSB mask;load DataMask with "1"
-              mov     NumBits,        #8                '' Load number of data bits
-MSB_Shift2    test    DataVal,        DataMask    wc    '' Test MSB of DataValue
-              muxc    outa,           DataPin           '' Set DataBit HIGH or LOW
-              shr     DataMask,       #1                '' Prepare for next DataBit
-              test    ClkPin,         ClkPin      wc    '' Should always make Z flag 0
-              muxnc   outa,           ClkPin            '' Clock Pin Low
-              test    ClkPin,         ClkPin      wc    '' Should always make Z flag 0
-              muxc    outa,           ClkPin            '' Clock Pin High
-              djnz    NumBits,        #MSB_Shift2       '' Decrement NumBits ; jump if not Zero
-              test    CSelPin,        CSelPin     wc    '' Should always make Z flag 0
-              muxc    outa,           CSelPin           '' Chip Select to output and high
-              wrlong  zero,par                          '' Zero command to signify command received
-              jmp     #loop                             '' Go wait for next command
-'------------------------------------------------------------------------------------------------------------------------------
-WRITEBUFF_                                              ''
-              mov     DataPin,        #1                '' Configure DataPin
-              shl     DataPin,        arg0                           
-              test    DataPin,        DataPin     wc       
-              muxc    dira,           DataPin
-              muxc    outa,           DataPin
-              mov     ClkPin,         #1                '' Configure ClockPin
-              shl     ClkPin,         arg1
-              test    ClkPin,         ClkPin      wc       
-              muxc    dira,           ClkPin
-              muxc    outa,           ClkPin
-              mov     CSelPin,        #1                '' Configure Chip Select
-              shl     CSelPin,        arg2              
-              test    CSelPin,        CSelPin     wc       
-              muxc    dira,           CSelPin
-              muxc    outa,           CSelPin
-
-              mov     BufAdr,         arg4              '' Move the address of the beginning of the buffer into T7
-              mov     DataCnt,        bsz               '' Move a 1024 into DataCnt (buffer size, 128x32 or 128x64) 
-
-rdbuff        rdbyte  DataVal,        BufAdr            '' Read a byte
-              add     BufAdr,         #1                '' Increment to next byte
-              test    CSelPin,        CSelPin     wc          
-              muxnc   outa,           CSelPin           '' Drive CS low
-              mov     DataMask,       #%10000000        '' Create MSB mask              
-              mov     NumBits,        #8                '' Load number of data bits
-MSB_Shift3    test   DataVal,         DataMask    wc    '' Test MSB of DataValue
-              muxc    outa,           DataPin           '' Set DataBit HIGH or LOW
-              shr     DataMask,             #1          '' Prepare for next DataBit
-              test    ClkPin,         ClkPin      wc       
-              muxnc   outa,           ClkPin            '' Clock Pin Low
-              test    ClkPin,         ClkPin      wc       
-              muxc    outa,           ClkPin            '' Clock Pin High
-              djnz    NumBits,        #MSB_Shift3       '' Decrement NumBits (number of bits); jump if not Zero
-              test    CSelPin,        CSelPin     wc       
-              muxc    outa,           CSelPin           '' Chip Select to output and high
-              djnz    DataCnt,        #rdbuff           '' Do until the buffer is empty (1024)
-
-              wrlong  zero,par                          '' Zero command to signify command received
-              jmp     #loop                             '' Go wait for next command
-'------------------------------------------------------------------------------------------------------------------------------
-{
-########################### Assembly variables ###########################
-}
-zero          long    0                                 '' Constant
-d0            long    $200                              '' Destination msb
-bsz           long    1024                              '' Buffer size
-                                              
-DataPin       long    0                                 '' Used for DataPin mask
-ClkPin        long    0                                 '' Used for ClockPin mask
-DataVal       long    0                                 '' Used to hold DataValue
-NumBits       long    0                                 '' Used to hold # of Bits
-DataMask      long    0                                 '' Used for temporary data mask
-CSelPin       long    0                                 '' Used for Chip Select mask
-BufAdr        long    0                                 '' Used for buffer address
-DataCnt       long    0                                 '' Used to count for buffer write
-                                              
-arg0          long    0                                 '' Arguments passed to/from high-level Spin
-arg1          long    0                       
-arg2          long    0                       
-arg3          long    0                       
-arg4          long    0                       
-              fit
+DAT
 ''
 '' A 5x7 font snagged off of the internet by a student of mine
 ''
