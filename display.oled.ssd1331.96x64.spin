@@ -19,6 +19,7 @@ OBJ
 VAR
 
     long _DC, _RES
+'    byte _shadow_reg[67]
     byte _sh_SETCOLUMN, _sh_SETROW, _sh_SETCONTRAST_A, _sh_SETCONTRAST_B, _sh_SETCONTRAST_C
     byte _sh_MASTERCCTRL, _sh_SECPRECHG, _sh_REMAPCOLOR, _sh_DISPSTARTLINE, _sh_DISPOFFSET
     byte _sh_DISPMODE, _sh_MULTIPLEX, _sh_DIM, _sh_MASTERCFG, _sh_DISPONOFF, _sh_POWERSAVE
@@ -80,7 +81,7 @@ PUB Defaults
 
 PUB DisplayEnabled(enabled) | tmp
 
-    readRegX (_sh_DISPONOFF, 1, @tmp)
+    tmp := _sh_DISPONOFF
     case ||enabled
         DISP_OFF, DISP_ON, DISP_ON_DIM:
             enabled := lookupz(enabled: core#SSD1331_CMD_DISPLAYOFF, core#SSD1331_CMD_DISPLAYON, core#SSD1331_CMD_DISPLAYONDIM)
@@ -92,7 +93,7 @@ PUB DisplayEnabled(enabled) | tmp
 
 PUB MirrorH(enabled) | tmp
 
-    readRegX (_sh_REMAPCOLOR, 1, @tmp)
+    tmp := _sh_REMAPCOLOR
     case ||enabled
         0, 1:
             enabled := (||enabled) << core#FLD_SEGREMAP
@@ -122,14 +123,29 @@ PUB PlotXY(x, y, rgb) | tmp[2]
 
 PUB StartLine(line) | tmp
 
-    readRegX (_sh_DISPSTARTLINE, 1, @tmp)
+    tmp := _sh_DISPSTARTLINE
     case line
         0..63:
         OTHER:
             return tmp
 
     _sh_DISPSTARTLINE := line
-    writeRegX (core#SSD1331_CMD_STARTLINE, 1, @_sh_DISPSTARTLINE)
+    tmp.byte[0] := core#SSD1331_CMD_STARTLINE
+    tmp.byte[1] := line
+    writeRegX (TRANS_CMD, 2, @tmp)
+
+PUB VertOffset(line) | tmp
+
+    tmp := _sh_DISPOFFSET
+    case line
+        0..63:
+        OTHER:
+            return tmp
+
+    _sh_DISPOFFSET := line
+    tmp.byte[0] := core#SSD1331_CMD_DISPLAYOFFSET
+    tmp.byte[1] := line
+    writeRegX (TRANS_CMD, 2, @tmp)
 
 PUB Reset
 
@@ -147,13 +163,6 @@ PUB Reset
     time.MSleep (10)
     io.High (_RES)
 }
-PUB readRegX(reg, nr_bytes, buf_addr) | tmp
-' Standard method to read data from shadow registers,
-'   since the device is write-only in SPI-mode
-'   case reg
-    repeat tmp from 0 to nr_bytes-1
-        byte[buf_addr][tmp] := reg
-
 PUB writeRegX(trans_type, nr_bytes, buf_addr)
 
     case trans_type
@@ -169,6 +178,40 @@ PUB writeRegX(trans_type, nr_bytes, buf_addr)
 
     spi.writeSPI (TRUE, buf_addr, nr_bytes) ' Write SPI transaction with blocking enabled
 
+
+{PRI POR
+'shadow reg binary blob: array of bytes set during startup
+'api-level methods use symbolic names in read/writeRegX
+'low-level methods use lookup/lookdown table to find that reg in array
+'core.con file uses std masks, fields, bits
+'   _shadow_reg.byte[0] := $00
+'   _shadow_reg.byte[1] := $5F
+'   _shadow_reg.byte[1] := $00
+'   _shadow_reg.byte[1] := $3F
+    _shadow_reg.byte[0] := $00
+    _shadow_reg.byte[0] := $5F
+    _shadow_reg.byte[0] := $00
+    _shadow_reg.byte[0] := $3F
+    _shadow_reg.byte[0] := $80
+    _shadow_reg.byte[0] := $80
+    _shadow_reg.byte[0] := $80
+    _shadow_reg.byte[0] := $0F
+    _shadow_reg.byte[0] := $80
+    _shadow_reg.byte[0] := $80
+    _shadow_reg.byte[0] := $80
+    _shadow_reg.byte[0] := $40
+    _shadow_reg.byte[0] := $00
+    _shadow_reg.byte[0] := $00
+    _shadow_reg.byte[0] := $A4
+    _shadow_reg.byte[0] := $3F
+    _shadow_reg.byte[0] := $00 '$AB - A
+    _shadow_reg.byte[0] := $80
+    _shadow_reg.byte[0] := $80
+    _shadow_reg.byte[0] := $80
+    _shadow_reg.byte[0] := $0F '$AB - E
+    _shadow_reg.byte[0] := $00
+    _shadow_reg.byte[0] := $00
+ }   
 {{
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                                   TERMS OF USE: MIT License                                                  │                                                            
