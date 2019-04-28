@@ -53,9 +53,9 @@ PUB Defaults
     DisplayEnabled (FALSE)
     MirrorH (FALSE)
     StartLine (0)
-{    SetVOffset (0)
-    SetDispMode (0)
-    SetMuxRatio (64)
+    VertOffset (0)
+    DispInverted (FALSE)
+{    SetMuxRatio (64)
     SetMasterCfg
     PowerSave (FALSE)
     SetPrecharge (1, 3)
@@ -79,6 +79,18 @@ PUB Defaults
 }
 
 
+PUB AllPixelsOn | tmp
+
+    _sh_DISPMODE := core#SSD1331_CMD_DISPLAYALLON
+    tmp := _sh_DISPMODE
+    writeRegX (TRANS_CMD, 1, @tmp)
+
+PUB AllPixelsOff | tmp
+
+    _sh_DISPMODE := core#SSD1331_CMD_DISPLAYALLOFF
+    tmp := _sh_DISPMODE
+    writeRegX (TRANS_CMD, 1, @tmp)
+
 PUB DisplayEnabled(enabled) | tmp
 
     tmp := _sh_DISPONOFF
@@ -90,6 +102,20 @@ PUB DisplayEnabled(enabled) | tmp
 
     _sh_DISPONOFF := enabled
     writeRegX (TRANS_CMD, 1, @_sh_DISPONOFF)
+
+PUB DispInverted(enabled) | tmp
+
+    tmp := _sh_DISPMODE
+    case ||enabled
+        0, 1:
+            enabled := lookupz(||enabled: core#SSD1331_CMD_NORMALDISPLAY, core#SSD1331_CMD_INVERTDISPLAY)
+        OTHER:
+            result := lookdownz(tmp: core#SSD1331_CMD_NORMALDISPLAY, core#SSD1331_CMD_INVERTDISPLAY)
+            return (result & %1) * TRUE
+
+    _sh_DISPMODE := enabled
+    tmp := _sh_DISPMODE
+    writeRegX (TRANS_CMD, 1, @tmp)
 
 PUB MirrorH(enabled) | tmp
 
