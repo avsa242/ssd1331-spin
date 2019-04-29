@@ -60,8 +60,9 @@ PUB Defaults
     PowerSaving (FALSE)
     Phase1Adj (1)
     Phase2Adj (3)
-{    SetClk (15, 1)
-    SetPrechargeSpd ($64, $78, $64)
+    ClockFreq (15)
+    ClockDiv (1)
+{    SetPrechargeSpd ($64, $78, $64)
     SetPrechargeLev ($3A)
     SetCOMDesLvl (83)
     SetCurrentLimit (7)
@@ -92,6 +93,21 @@ PUB AllPixelsOff | tmp
     tmp := _sh_DISPMODE
     writeRegX (TRANS_CMD, 1, @tmp)
 
+PUB ClockDiv(divider) | tmp
+
+    tmp := _sh_CLK
+    case divider
+        1..16:
+            divider -= 1
+        OTHER:
+            return (tmp & core#BITS_CLKDIV) + 1
+
+    _sh_CLK &= core#MASK_CLKDIV
+    _sh_CLK := _sh_CLK | divider
+    tmp.byte[0] := core#SSD1331_CMD_CLOCKDIV
+    tmp.byte[1] := divider
+    writeRegX (TRANS_CMD, 2, @tmp)
+
 PUB ClockFreq(freq) | tmp
 
     tmp := _sh_CLK
@@ -101,7 +117,8 @@ PUB ClockFreq(freq) | tmp
         OTHER:
             return (tmp >> core#FLD_FOSCFREQ) & core#BITS_FOSCFREQ
 
-    _sh_CLK := freq
+    _sh_CLK &= core#MASK_FOSCFREQ
+    _sh_CLK := _sh_CLK | freq
     tmp.byte[0] := core#SSD1331_CMD_CLOCKDIV
     tmp.byte[1] := freq
     writeRegX (TRANS_CMD, 2, @tmp)
