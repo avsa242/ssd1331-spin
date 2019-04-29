@@ -21,7 +21,7 @@ VAR
     long _DC, _RES
 '    byte _shadow_reg[67]
     byte _sh_SETCOLUMN, _sh_SETROW, _sh_SETCONTRAST_A, _sh_SETCONTRAST_B, _sh_SETCONTRAST_C
-    byte _sh_MASTERCCTRL, _sh_SECPRECHG, _sh_REMAPCOLOR, _sh_DISPSTARTLINE, _sh_DISPOFFSET
+    byte _sh_MASTERCCTRL, _sh_SECPRECHG[3], _sh_REMAPCOLOR, _sh_DISPSTARTLINE, _sh_DISPOFFSET
     byte _sh_DISPMODE, _sh_MULTIPLEX, _sh_DIM, _sh_MASTERCFG, _sh_DISPONOFF, _sh_POWERSAVE
     byte _sh_PHASE12PER, _sh_CLK, _sh_GRAYTABLE, _sh_PRECHGLEV, _sh_VCOMH, _sh_CMDLOCK
     byte _sh_HVSCROLL
@@ -235,6 +235,33 @@ PUB PowerSaving(enabled) | tmp
     tmp.byte[0] := core#SSD1331_CMD_POWERMODE
     tmp.byte[1] := enabled
     writeRegX (TRANS_CMD, 2, @tmp)
+
+PUB PrechargeSpeed(seg_a, seg_b, seg_c) | tmp[2]
+
+    case seg_a
+        $00..$FF:
+        OTHER:
+            return _sh_SECPRECHG.byte[0]
+    case seg_b
+        $00..$FF:
+        OTHER:
+            return _sh_SECPRECHG.byte[1]
+    case seg_c
+        $00..$FF:
+        OTHER:
+            return _sh_SECPRECHG.byte[2]
+
+    _sh_SECPRECHG[0] := seg_a
+    _sh_SECPRECHG[1] := seg_b
+    _sh_SECPRECHG[2] := seg_c
+
+    tmp.byte[0] := core#SSD1331_CMD_PRECHARGEA
+    tmp.byte[1] := seg_a
+    tmp.byte[2] := core#SSD1331_CMD_PRECHARGEB
+    tmp.byte[3] := seg_b
+    tmp.byte[4] := core#SSD1331_CMD_PRECHARGEC
+    tmp.byte[5] := seg_c
+    writeRegX (TRANS_CMD, 6, @tmp)
 
 PUB ExtSupply | tmp
 
