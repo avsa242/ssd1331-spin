@@ -39,7 +39,10 @@ CON
     SSD1331_CMD_INVERTDISPLAY           = $A7
     SSD1331_CMD_SETMULTIPLEX            = $A8
     SSD1331_CMD_DISPLAYONDIM            = $AC
+
     SSD1331_CMD_SETMASTER               = $AD
+        MASTERCFG_EXT_VCC               = $8E
+
     SSD1331_CMD_DISPLAYOFF              = $AE
     SSD1331_CMD_DISPLAYON               = $AF
     SSD1331_CMD_POWERMODE               = $B0

@@ -55,9 +55,9 @@ PUB Defaults
     StartLine (0)
     VertOffset (0)
     DispInverted (FALSE)
-{    SetMuxRatio (64)
-    SetMasterCfg
-    PowerSave (FALSE)
+    DisplayLines (64)
+    ExtSupply
+{    PowerSave (FALSE)
     SetPrecharge (1, 3)
     SetClk (15, 1)
     SetPrechargeSpd ($64, $78, $64)
@@ -160,6 +160,12 @@ PUB PlotXY(x, y, rgb) | tmp[2]
     time.USleep (3)
 
     writeRegX (TRANS_DATA, 2, @rgb)
+
+PUB ExtSupply | tmp
+
+    tmp.byte[0] := core#SSD1331_CMD_SETMASTER
+    tmp.byte[1] := core#MASTERCFG_EXT_VCC
+    writeRegX (TRANS_CMD, 2, @tmp)
 
 PUB StartLine(line) | tmp
 
