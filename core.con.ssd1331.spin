@@ -60,6 +60,14 @@ CON
         MASK_PHASE2                     = SSD1331_CMD_PRECHARGE_MASK ^ (BITS_PHASE2 << FLD_PHASE2)
 
     SSD1331_CMD_CLOCKDIV                = $B3
+    SSD1331_CMD_CLOCKDIV_MASK           = $FF
+        FLD_CLKDIV                      = 0
+        FLD_FOSCFREQ                    = 4
+        BITS_CLKDIV                     = %1111
+        BITS_FOSCFREQ                   = %1111
+        MASK_CLKDIV                     = SSD1331_CMD_CLOCKDIV_MASK ^ (BITS_CLKDIV)
+        MASK_FOSCFREQ                   = SSD1331_CMD_CLOCKDIV_MASK ^ (BITS_FOSCFREQ << FLD_FOSCFREQ)
+
     SSD1331_CMD_PRECHARGEA              = $8A
     SSD1331_CMD_PRECHARGEB              = $8B
     SSD1331_CMD_PRECHARGEC              = $8C

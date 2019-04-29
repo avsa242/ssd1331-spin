@@ -92,6 +92,20 @@ PUB AllPixelsOff | tmp
     tmp := _sh_DISPMODE
     writeRegX (TRANS_CMD, 1, @tmp)
 
+PUB ClockFreq(freq) | tmp
+
+    tmp := _sh_CLK
+    case freq
+        0..15:
+            freq <<= core#FLD_FOSCFREQ
+        OTHER:
+            return (tmp >> core#FLD_FOSCFREQ) & core#BITS_FOSCFREQ
+
+    _sh_CLK := freq
+    tmp.byte[0] := core#SSD1331_CMD_CLOCKDIV
+    tmp.byte[1] := freq
+    writeRegX (TRANS_CMD, 2, @tmp)
+
 PUB DisplayEnabled(enabled) | tmp
 
     tmp := _sh_DISPONOFF
