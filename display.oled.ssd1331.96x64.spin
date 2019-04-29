@@ -103,6 +103,20 @@ PUB DisplayEnabled(enabled) | tmp
     _sh_DISPONOFF := enabled
     writeRegX (TRANS_CMD, 1, @_sh_DISPONOFF)
 
+PUB DisplayLines(lines) | tmp
+
+    tmp := _sh_MULTIPLEX
+    case lines
+        16..64:
+            lines -= 1
+        OTHER:
+            return tmp + 1
+
+    _sh_MULTIPLEX := lines
+    tmp.byte[0] := core#SSD1331_CMD_SETMULTIPLEX
+    tmp.byte[1] := lines
+    writeRegX (TRANS_CMD, 2, @tmp)
+
 PUB DispInverted(enabled) | tmp
 
     tmp := _sh_DISPMODE
