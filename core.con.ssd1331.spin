@@ -51,6 +51,14 @@ CON
         POWERMODE_POWERSAVE_DIS         = $0B
 
     SSD1331_CMD_PRECHARGE               = $B1
+    SSD1331_CMD_PRECHARGE_MASK          = $FF
+        FLD_PHASE1                      = 0
+        FLD_PHASE2                      = 4
+        BITS_PHASE1                     = %1111
+        BITS_PHASE2                     = %1111
+        MASK_PHASE1                     = SSD1331_CMD_PRECHARGE_MASK ^ (BITS_PHASE1)
+        MASK_PHASE2                     = SSD1331_CMD_PRECHARGE_MASK ^ (BITS_PHASE2 << FLD_PHASE2)
+
     SSD1331_CMD_CLOCKDIV                = $B3
     SSD1331_CMD_PRECHARGEA              = $8A
     SSD1331_CMD_PRECHARGEB              = $8B

@@ -58,8 +58,9 @@ PUB Defaults
     DisplayLines (64)
     ExtSupply
     PowerSaving (FALSE)
-{    SetPrecharge (1, 3)
-    SetClk (15, 1)
+    Phase1Adj (1)
+    Phase2Adj (3)
+{    SetClk (15, 1)
     SetPrechargeSpd ($64, $78, $64)
     SetPrechargeLev ($3A)
     SetCOMDesLvl (83)
@@ -144,6 +145,35 @@ PUB MirrorH(enabled) | tmp
     _sh_REMAPCOLOR := (_sh_REMAPCOLOR | enabled) & core#SSD1331_CMD_SETREMAP_MASK
     tmp.byte[0] := core#SSD1331_CMD_SETREMAP
     tmp.byte[1] := _sh_REMAPCOLOR
+    writeRegX (TRANS_CMD, 2, @tmp)
+
+PUB Phase1Adj(clks) | tmp
+
+    tmp := _sh_PHASE12PER
+    case clks
+        1..15:
+        OTHER:
+            return tmp & core#BITS_PHASE1
+
+    _sh_PHASE12PER &= core#MASK_PHASE1
+    _sh_PHASE12PER := (_sh_PHASE12PER | clks)
+    tmp.byte[0] := core#SSD1331_CMD_PRECHARGE
+    tmp.byte[1] := _sh_PHASE12PER
+    writeRegX (TRANS_CMD, 2, @tmp)
+
+PUB Phase2Adj(clks) | tmp
+
+    tmp := _sh_PHASE12PER
+    case clks
+        1..15:
+            clks <<= core#FLD_PHASE2
+        OTHER:
+            return (tmp >> core#FLD_PHASE2) & core#BITS_PHASE2
+
+    _sh_PHASE12PER &= core#MASK_PHASE2
+    _sh_PHASE12PER := (_sh_PHASE12PER | clks)
+    tmp.byte[0] := core#SSD1331_CMD_PRECHARGE
+    tmp.byte[1] := _sh_PHASE12PER
     writeRegX (TRANS_CMD, 2, @tmp)
 
 PUB PlotXY(x, y, rgb) | tmp[2]
