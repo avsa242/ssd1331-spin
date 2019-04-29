@@ -45,7 +45,11 @@ CON
 
     SSD1331_CMD_DISPLAYOFF              = $AE
     SSD1331_CMD_DISPLAYON               = $AF
+
     SSD1331_CMD_POWERMODE               = $B0
+        POWERMODE_POWERSAVE_ENA         = $1A
+        POWERMODE_POWERSAVE_DIS         = $0B
+
     SSD1331_CMD_PRECHARGE               = $B1
     SSD1331_CMD_CLOCKDIV                = $B3
     SSD1331_CMD_PRECHARGEA              = $8A

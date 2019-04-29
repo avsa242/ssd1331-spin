@@ -57,8 +57,8 @@ PUB Defaults
     DispInverted (FALSE)
     DisplayLines (64)
     ExtSupply
-{    PowerSave (FALSE)
-    SetPrecharge (1, 3)
+    PowerSaving (FALSE)
+{    SetPrecharge (1, 3)
     SetClk (15, 1)
     SetPrechargeSpd ($64, $78, $64)
     SetPrechargeLev ($3A)
@@ -160,6 +160,20 @@ PUB PlotXY(x, y, rgb) | tmp[2]
     time.USleep (3)
 
     writeRegX (TRANS_DATA, 2, @rgb)
+
+PUB PowerSaving(enabled) | tmp
+
+    tmp := _sh_POWERSAVE
+    case ||enabled
+        0, 1:
+            enabled := lookupz(||enabled: core#POWERMODE_POWERSAVE_DIS, core#POWERMODE_POWERSAVE_ENA)
+        OTHER:
+            return (lookdownz(_sh_POWERSAVE: core#POWERMODE_POWERSAVE_DIS, core#POWERMODE_POWERSAVE_ENA) & %1) * TRUE
+
+    _sh_POWERSAVE := enabled
+    tmp.byte[0] := core#SSD1331_CMD_POWERMODE
+    tmp.byte[1] := enabled
+    writeRegX (TRANS_CMD, 2, @tmp)
 
 PUB ExtSupply | tmp
 
