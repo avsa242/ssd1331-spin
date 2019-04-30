@@ -24,9 +24,9 @@ CON
     LED         = cfg#LED1
 
     COL_REG     = 0
-    COL_SET     = 12
-    COL_READ    = 24
-    COL_PF      = 40
+    COL_SET     = 14
+    COL_READ    = COL_SET+12
+    COL_PF      = COL_READ+14
 
 
 OBJ
@@ -46,6 +46,7 @@ PUB Main
     Setup
     oled.Defaults
     _row := 3
+    Test_PRECHARGELEV (1)
     Test_PRECHARGEA (1)
     Test_PRECHARGEB (1)
     Test_PRECHARGEC (1)
@@ -62,6 +63,16 @@ PUB Main
     Test_DISPONOFF (1)
     Flash (LED)
 
+
+PUB Test_PRECHARGELEV(reps) | tmp, read
+
+'    _expanded:=TRUE
+    _row++
+    repeat reps
+        repeat tmp from 1 to 32
+            oled.PrechargeLevel (lookup(tmp: 100, 110, 130, 140, 150, 170, 180, 190, 200, 220, 230, 240, 260, 270, 280, 300, 310, 320, 330, 350, 360, 370, 390, 400, 410, 430, 440, 450, 460, 480, 490, 500))
+            read := oled.PrechargeLevel (-3)
+            Message (string("PRECHARGELEV"), lookup(tmp: 100, 110, 130, 140, 150, 170, 180, 190, 200, 220, 230, 240, 260, 270, 280, 300, 310, 320, 330, 350, 360, 370, 390, 400, 410, 430, 440, 450, 460, 480, 490, 500), read)
 
 PUB Test_PRECHARGEC(reps) | tmp, read
 

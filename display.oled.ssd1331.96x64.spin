@@ -63,8 +63,8 @@ PUB Defaults
     ClockFreq (15)
     ClockDiv (1)
     PrechargeSpeed ($64, $78, $64)
-{    SetPrechargeLev ($3A)
-    SetCOMDesLvl (83)
+    PrechargeLevel (480)
+{    SetCOMDesLvl (83)
     SetCurrentLimit (7)
     SetContrastA ($fF)
     SetContrastB ($fF)
@@ -234,6 +234,21 @@ PUB PowerSaving(enabled) | tmp
     _sh_POWERSAVE := enabled
     tmp.byte[0] := core#SSD1331_CMD_POWERMODE
     tmp.byte[1] := enabled
+    writeRegX (TRANS_CMD, 2, @tmp)
+
+PUB PrechargeLevel(mV) | tmp
+
+    tmp := _sh_PRECHGLEV
+    case mV := lookdown(mv: 100, 110, 130, 140, 150, 170, 180, 190, 200, 220, 230, 240, 260, 270, 280, 300, 310, 320, 330, 350, 360, 370, 390, 400, 410, 430, 440, 450, 460, 480, 490, 500)
+        1..32:
+            mV := (mV - 1) << 1
+        OTHER:
+            result := (tmp >> 1)
+            return lookupz(result: 100, 110, 130, 140, 150, 170, 180, 190, 200, 220, 230, 240, 260, 270, 280, 300, 310, 320, 330, 350, 360, 370, 390, 400, 410, 430, 440, 450, 460, 480, 490, 500)
+
+    _sh_PRECHGLEV := mV
+    tmp.byte[0] := core#SSD1331_CMD_PRECHARGELEVEL
+    tmp.byte[1] := mV
     writeRegX (TRANS_CMD, 2, @tmp)
 
 PUB PrechargeSpeed(seg_a, seg_b, seg_c) | tmp[2]
