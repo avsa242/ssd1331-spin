@@ -66,14 +66,11 @@ PUB Defaults
     PrechargeLevel (480)
     VCOMHDeselect (830)
     CurrentLimit (7)
-{    SetContrastA ($fF)
-    SetContrastB ($fF)
-    SetContrastC ($fF)
-    SetContrastA ($91)
-    SetContrastB ($50)
-    SetContrastC ($7D)
-    EnableDisplay (TRUE)
-    SetDisplayBounds (0, 0, 95, 63)
+    ContrastA ($80)
+    ContrastB ($80)
+    ContrastC ($80)
+    DisplayEnabled (TRUE)
+{    SetDisplayBounds (0, 0, 95, 63)
 
     invertDisplay(FALSE)
     ' AutoUpdateOn
@@ -121,6 +118,45 @@ PUB ClockFreq(freq) | tmp
     _sh_CLK := _sh_CLK | freq
     tmp.byte[0] := core#SSD1331_CMD_CLOCKDIV
     tmp.byte[1] := freq
+    writeRegX (TRANS_CMD, 2, @tmp)
+
+PUB ContrastA(level) | tmp
+
+    tmp := _sh_SETCONTRAST_A
+    case level
+        0..255:
+        OTHER:
+            return tmp
+
+    _sh_SETCONTRAST_A := level
+    tmp.byte[0] := core#SSD1331_CMD_CONTRASTA
+    tmp.byte[1] := level
+    writeRegX (TRANS_CMD, 2, @tmp)
+
+PUB ContrastB(level) | tmp
+
+    tmp := _sh_SETCONTRAST_B
+    case level
+        0..255:
+        OTHER:
+            return tmp
+
+    _sh_SETCONTRAST_B := level
+    tmp.byte[0] := core#SSD1331_CMD_CONTRASTB
+    tmp.byte[1] := level
+    writeRegX (TRANS_CMD, 2, @tmp)
+
+PUB ContrastC(level) | tmp
+
+    tmp := _sh_SETCONTRAST_C
+    case level
+        0..255:
+        OTHER:
+            return tmp
+
+    _sh_SETCONTRAST_C := level
+    tmp.byte[0] := core#SSD1331_CMD_CONTRASTC
+    tmp.byte[1] := level
     writeRegX (TRANS_CMD, 2, @tmp)
 
 PUB CurrentLimit(divisor) | tmp

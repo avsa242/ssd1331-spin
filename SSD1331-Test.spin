@@ -46,6 +46,9 @@ PUB Main
     Setup
     oled.Defaults
     _row := 3
+    Test_CONTRAST_C (1)
+    Test_CONTRAST_B (1)
+    Test_CONTRAST_A (1)
     Test_MASTERCURRENT (1)
     Test_VCOMH (1)
     Test_PRECHARGELEV (1)
@@ -65,9 +68,40 @@ PUB Main
     Test_DISPONOFF (1)
     Flash (LED)
 
+
+PUB Test_CONTRAST_C(reps) | tmp, read
+
+'    _expanded:=TRUE
+    _row++
+    repeat reps
+        repeat tmp from 0 to 255
+            oled.ContrastC (tmp)
+            read := oled.ContrastC (-3)
+            Message (string("CONTRAST_C"), tmp, read)
+
+PUB Test_CONTRAST_B(reps) | tmp, read
+
+'    _expanded:=TRUE
+    _row++
+    repeat reps
+        repeat tmp from 0 to 255
+            oled.ContrastB (tmp)
+            read := oled.ContrastB (-3)
+            Message (string("CONTRAST_B"), tmp, read)
+
+PUB Test_CONTRAST_A(reps) | tmp, read
+
+'    _expanded:=TRUE
+    _row++
+    repeat reps
+        repeat tmp from 0 to 255
+            oled.ContrastA (tmp)
+            read := oled.ContrastA (-3)
+            Message (string("CONTRAST_A"), tmp, read)
+
 PUB Test_MASTERCURRENT(reps) | tmp, read
 
-    _expanded:=TRUE
+'    _expanded:=TRUE
     _row++
     repeat reps
         repeat tmp from 1 to 16
