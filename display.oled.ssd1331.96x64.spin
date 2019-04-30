@@ -9,6 +9,11 @@ CON
     DISP_ON     = 1
     DISP_ON_DIM = 2
 
+' Color depth formats
+    COLOR_256   = %00
+    COLOR_65K   = %01
+    COLOR_65K2  = %10
+
 OBJ
 
     core    : "core.con.ssd1331"
@@ -50,6 +55,7 @@ PUB Stop
 
 PUB Defaults | tmp[2]
 
+    ColorDepth (COLOR_65K)
     MirrorH (FALSE)
     DisplayEnabled (FALSE)
     AllPixelsOff
@@ -132,6 +138,19 @@ PUB ClockFreq(freq) | tmp
     tmp.byte[0] := core#SSD1331_CMD_CLOCKDIV
     tmp.byte[1] := freq
     writeRegX (TRANS_CMD, 2, @tmp)
+
+PUB ColorDepth(format) | tmp
+
+    tmp := _sh_REMAPCOLOR
+    case format
+        COLOR_256, COLOR_65K, COLOR_65K2:
+            format <<= core#FLD_COLORFORMAT
+        OTHER:
+            return tmp >> core#FLD_COLORFORMAT
+
+    _sh_REMAPCOLOR &= core#MASK_COLORFORMAT
+    _sh_REMAPCOLOR := _sh_REMAPCOLOR | format
+    writeRegX (TRANS_CMD, 1, @_sh_REMAPCOLOR)
 
 PUB ContrastA(level) | tmp
 

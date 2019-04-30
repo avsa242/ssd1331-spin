@@ -46,6 +46,7 @@ PUB Main
     Setup
     oled.Defaults
     _row := 3
+    Test_COLORFORMAT (1)
     Test_CONTRAST_C (1)
     Test_CONTRAST_B (1)
     Test_CONTRAST_A (1)
@@ -68,6 +69,16 @@ PUB Main
     Test_DISPONOFF (1)
     Flash (LED)
 
+
+PUB Test_COLORFORMAT(reps) | tmp, read
+
+'    _expanded:=TRUE
+    _row++
+    repeat reps
+        repeat tmp from 0 to 2
+            oled.ColorDepth (tmp)
+            read := oled.ColorDepth (-3)
+            Message (string("COLORDEPTH"), tmp, read)
 
 PUB Test_CONTRAST_C(reps) | tmp, read
 
