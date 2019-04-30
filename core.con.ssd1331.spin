@@ -11,7 +11,7 @@
 
 CON
 '' Register map
-    SSD1331_SSD1331_CMD_DRAWLINE                = $21
+    SSD1331_CMD_DRAWLINE                = $21
     SSD1331_CMD_DRAWRECT                = $22
     SSD1331_CMD_COPY                    = $23
     SSD1331_CMD_CLEAR                   = $25

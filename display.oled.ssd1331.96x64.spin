@@ -34,10 +34,10 @@ PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN): okay
                 if lookdown(CLK_PIN: 0..31)
                     if lookdown(RES_PIN: 0..31)
                         if okay := spi.start (CS_PIN, CLK_PIN, DIN_PIN, -1)
-                            dira[_DC] := 1
-                            dira[_RES] := 1
                             _DC := DC_PIN
                             _RES := RES_PIN
+                            dira[_DC] := 1
+                            dira[_RES] := 1
                             Reset
                             return okay
     return FALSE
@@ -48,35 +48,38 @@ PUB Stop
     'other power-off code here
     spi.stop
 
-PUB Defaults
+PUB Defaults | tmp[2]
 
-    DisplayEnabled (FALSE)
     MirrorH (FALSE)
+    DisplayEnabled (FALSE)
+    AllPixelsOff
+
+    tmp := 0
+    tmp.byte[0] := core#SSD1331_CMD_SETREMAP
+    tmp.byte[1] := $60
+    writeRegX (TRANS_CMD, 2, @tmp)
+
     StartLine (0)
     VertOffset (0)
     DispInverted (FALSE)
     DisplayLines (64)
     ExtSupply
     PowerSaving (FALSE)
+    Phase1Adj (3)
     Phase1Adj (1)
-    Phase2Adj (3)
-    ClockFreq (15)
-    ClockDiv (1)
+    ClockFreq ($F)
+    ClockDiv (0)
     PrechargeSpeed ($64, $78, $64)
     PrechargeLevel (480)
     VCOMHDeselect (830)
     CurrentLimit (7)
-    ContrastA ($80)
-    ContrastB ($80)
-    ContrastC ($80)
-    DisplayEnabled (TRUE)
-{    SetDisplayBounds (0, 0, 95, 63)
-
-    invertDisplay(FALSE)
-    ' AutoUpdateOn
+    ContrastA ($91)
+    ContrastB ($50)
+    ContrastC ($7D)
+    DisplayEnabled (DISP_ON)
+    DisplayBounds (0, 0, 95, 63)
+    DispInverted (FALSE)
     Clear
-}
-
 
 PUB AllPixelsOn | tmp
 
@@ -89,6 +92,16 @@ PUB AllPixelsOff | tmp
     _sh_DISPMODE := core#SSD1331_CMD_DISPLAYALLOFF
     tmp := _sh_DISPMODE
     writeRegX (TRANS_CMD, 1, @tmp)
+
+PUB Clear | tmp[2]
+
+    tmp.byte[0] := core#SSD1331_CMD_NOP3
+    tmp.byte[1] := core#SSD1331_CMD_CLEAR
+    tmp.byte[2] := 0
+    tmp.byte[3] := 0
+    tmp.byte[4] := 95
+    tmp.byte[5] := 63
+    writeRegX (TRANS_CMD, 6, @tmp)
 
 PUB ClockDiv(divider) | tmp
 
@@ -172,6 +185,23 @@ PUB CurrentLimit(divisor) | tmp
     tmp.byte[0] := core#SSD1331_CMD_MASTERCURRENT
     tmp.byte[1] := divisor
     writeRegX (TRANS_CMD, 2, @tmp)
+
+PUB DisplayBounds(sx, sy, ex, ey) | tmp[2]
+
+    ifnot lookup(sx: 0..95) or lookup(sy: 0..63) or lookup(ex: 0..95) or lookup(ey: 0..63)
+        return
+
+    tmp.byte[0] := core#SSD1331_CMD_SETCOLUMN
+    tmp.byte[1] := sx
+    tmp.byte[2] := ex
+
+    writeRegX (TRANS_CMD, 3, @tmp)
+
+    tmp.byte[0] := core#SSD1331_CMD_SETROW
+    tmp.byte[1] := sy
+    tmp.byte[2] := ey
+
+    writeRegX (TRANS_CMD, 3, @tmp)
 
 PUB DisplayEnabled(enabled) | tmp
 
@@ -377,20 +407,12 @@ PUB VertOffset(line) | tmp
 
 PUB Reset
 
-    dira[_RES] := 1
-
     outa[_RES] := 1
     time.MSleep (1)
     outa[_RES] := 0
     time.MSleep (10)
     outa[_RES] := 1
 
-{    io.High (_RES)
-    time.MSleep (1)
-    io.Low (_RES)
-    time.MSleep (10)
-    io.High (_RES)
-}
 PUB writeRegX(trans_type, nr_bytes, buf_addr)
 
     case trans_type
