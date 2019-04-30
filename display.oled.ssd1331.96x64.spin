@@ -65,8 +65,8 @@ PUB Defaults
     PrechargeSpeed ($64, $78, $64)
     PrechargeLevel (480)
     VCOMHDeselect (830)
-{    SetCurrentLimit (7)
-    SetContrastA ($fF)
+    CurrentLimit (7)
+{    SetContrastA ($fF)
     SetContrastB ($fF)
     SetContrastC ($fF)
     SetContrastA ($91)
@@ -121,6 +121,20 @@ PUB ClockFreq(freq) | tmp
     _sh_CLK := _sh_CLK | freq
     tmp.byte[0] := core#SSD1331_CMD_CLOCKDIV
     tmp.byte[1] := freq
+    writeRegX (TRANS_CMD, 2, @tmp)
+
+PUB CurrentLimit(divisor) | tmp
+
+    tmp := _sh_MASTERCCTRL
+    case divisor
+        1..16:
+            divisor -= 1
+        OTHER:
+            return tmp + 1
+
+    _sh_MASTERCCTRL := divisor
+    tmp.byte[0] := core#SSD1331_CMD_MASTERCURRENT
+    tmp.byte[1] := divisor
     writeRegX (TRANS_CMD, 2, @tmp)
 
 PUB DisplayEnabled(enabled) | tmp

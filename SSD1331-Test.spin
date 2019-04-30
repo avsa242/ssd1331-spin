@@ -46,6 +46,7 @@ PUB Main
     Setup
     oled.Defaults
     _row := 3
+    Test_MASTERCURRENT (1)
     Test_VCOMH (1)
     Test_PRECHARGELEV (1)
     Test_PRECHARGEA (1)
@@ -64,6 +65,15 @@ PUB Main
     Test_DISPONOFF (1)
     Flash (LED)
 
+PUB Test_MASTERCURRENT(reps) | tmp, read
+
+    _expanded:=TRUE
+    _row++
+    repeat reps
+        repeat tmp from 1 to 16
+            oled.CurrentLimit (tmp)
+            read := oled.CurrentLimit (-3)
+            Message (string("MASTERCURRENT"), tmp, read)
 
 PUB Test_VCOMH(reps) | tmp, read
 
