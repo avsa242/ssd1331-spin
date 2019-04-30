@@ -64,8 +64,8 @@ PUB Defaults
     ClockDiv (1)
     PrechargeSpeed ($64, $78, $64)
     PrechargeLevel (480)
-{    SetCOMDesLvl (83)
-    SetCurrentLimit (7)
+    VCOMHDeselect (830)
+{    SetCurrentLimit (7)
     SetContrastA ($fF)
     SetContrastB ($fF)
     SetContrastC ($fF)
@@ -162,6 +162,12 @@ PUB DispInverted(enabled) | tmp
     _sh_DISPMODE := enabled
     tmp := _sh_DISPMODE
     writeRegX (TRANS_CMD, 1, @tmp)
+
+PUB ExtSupply | tmp
+
+    tmp.byte[0] := core#SSD1331_CMD_SETMASTER
+    tmp.byte[1] := core#MASTERCFG_EXT_VCC
+    writeRegX (TRANS_CMD, 2, @tmp)
 
 PUB MirrorH(enabled) | tmp
 
@@ -278,12 +284,6 @@ PUB PrechargeSpeed(seg_a, seg_b, seg_c) | tmp[2]
     tmp.byte[5] := seg_c
     writeRegX (TRANS_CMD, 6, @tmp)
 
-PUB ExtSupply | tmp
-
-    tmp.byte[0] := core#SSD1331_CMD_SETMASTER
-    tmp.byte[1] := core#MASTERCFG_EXT_VCC
-    writeRegX (TRANS_CMD, 2, @tmp)
-
 PUB StartLine(line) | tmp
 
     tmp := _sh_DISPSTARTLINE
@@ -295,6 +295,21 @@ PUB StartLine(line) | tmp
     _sh_DISPSTARTLINE := line
     tmp.byte[0] := core#SSD1331_CMD_STARTLINE
     tmp.byte[1] := line
+    writeRegX (TRANS_CMD, 2, @tmp)
+
+PUB VCOMHDeselect(mV) | tmp
+
+    tmp := _sh_VCOMH
+    case mV := lookdown(mv: 440, 520, 610, 710, 830)
+        1..5:
+            mV := lookup(mV: $00, $10, $20, $30, $3E)
+        OTHER:
+            result := lookdown(tmp: $00, $10, $20, $30, $3E)
+            return lookup(result: 440, 520, 610, 710, 830)
+
+    _sh_VCOMH := mV
+    tmp.byte[0] := core#SSD1331_CMD_VCOMH
+    tmp.byte[1] := mV
     writeRegX (TRANS_CMD, 2, @tmp)
 
 PUB VertOffset(line) | tmp

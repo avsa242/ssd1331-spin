@@ -46,6 +46,7 @@ PUB Main
     Setup
     oled.Defaults
     _row := 3
+    Test_VCOMH (1)
     Test_PRECHARGELEV (1)
     Test_PRECHARGEA (1)
     Test_PRECHARGEB (1)
@@ -63,6 +64,16 @@ PUB Main
     Test_DISPONOFF (1)
     Flash (LED)
 
+
+PUB Test_VCOMH(reps) | tmp, read
+
+'    _expanded:=TRUE
+    _row++
+    repeat reps
+        repeat tmp from 1 to 5
+            oled.VCOMHDeselect (lookup(tmp: 440, 520, 610, 710, 830))
+            read := oled.VCOMHDeselect (-3)
+            Message (string("VCOMH"), lookup(tmp: 440, 520, 610, 710, 830), read)
 
 PUB Test_PRECHARGELEV(reps) | tmp, read
 
