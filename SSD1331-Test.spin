@@ -46,6 +46,7 @@ PUB Main
     Setup
     oled.Defaults
     _row := 3
+    Test_INTERLACE (1)
     Test_MIRRORV (1)
     Test_COLORFORMAT (1)
     Test_CONTRAST_C (1)
@@ -70,6 +71,18 @@ PUB Main
     Test_DISPONOFF (1)
     Flash (LED)
 
+
+PUB Test_INTERLACE(reps) | tmp, read
+
+'    _expanded := TRUE
+    _row++
+    repeat reps
+        repeat tmp from 0 to -1
+            oled.Interlace (tmp)
+            read := oled.Interlace (-3)
+            Message (string("INTERLACE"), tmp, read)
+
+    oled.MirrorV (FALSE)
 
 PUB Test_MIRRORV(reps) | tmp, read
 

@@ -268,6 +268,21 @@ PUB ExtSupply | tmp
     tmp.byte[1] := core#MASTERCFG_EXT_VCC
     writeRegX (TRANS_CMD, 2, @tmp)
 
+PUB Interlace(enabled) | tmp
+
+    tmp := _sh_REMAPCOLOR
+    case ||enabled
+        0, 1:
+            enabled := (||enabled) << core#FLD_COMSPLIT
+        OTHER:
+            return ((tmp >> core#FLD_COMSPLIT) & %1) * TRUE
+
+    _sh_REMAPCOLOR &= core#MASK_COMSPLIT
+    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | enabled) & core#SSD1331_CMD_SETREMAP_MASK
+    tmp.byte[0] := core#SSD1331_CMD_SETREMAP
+    tmp.byte[1] := _sh_REMAPCOLOR
+    writeRegX (TRANS_CMD, 2, @tmp)
+
 PUB MirrorH(enabled) | tmp
 
     tmp := _sh_REMAPCOLOR
