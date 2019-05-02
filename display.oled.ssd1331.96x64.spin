@@ -283,6 +283,22 @@ PUB MirrorH(enabled) | tmp
     tmp.byte[1] := _sh_REMAPCOLOR
     writeRegX (TRANS_CMD, 2, @tmp)
 
+PUB MirrorV(enabled) | tmp
+
+    tmp := _sh_REMAPCOLOR
+    case ||enabled
+        0, 1:
+            enabled := (||enabled) << core#FLD_COMREMAP
+        OTHER:
+            return ((tmp >> core#FLD_COMREMAP) & %1) * TRUE
+
+    _sh_REMAPCOLOR &= core#MASK_COMREMAP
+    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | enabled) & core#SSD1331_CMD_SETREMAP_MASK
+    tmp.byte[0] := core#SSD1331_CMD_SETREMAP
+    tmp.byte[1] := _sh_REMAPCOLOR
+    writeRegX (TRANS_CMD, 2, @tmp)
+
+
 PUB Phase1Adj(clks) | tmp
 
     tmp := _sh_PHASE12PER
