@@ -46,6 +46,7 @@ PUB Main
     Setup
     oled.Defaults
     _row := 3
+    Test_MIRRORV (1)
     Test_COLORFORMAT (1)
     Test_CONTRAST_C (1)
     Test_CONTRAST_B (1)
@@ -69,6 +70,18 @@ PUB Main
     Test_DISPONOFF (1)
     Flash (LED)
 
+
+PUB Test_MIRRORV(reps) | tmp, read
+
+'    _expanded := TRUE
+    _row++
+    repeat reps
+        repeat tmp from 0 to -1
+            oled.MirrorV (tmp)
+            read := oled.MirrorV (-3)
+            Message (string("MIRRORV"), tmp, read)
+
+    oled.MirrorV (FALSE)
 
 PUB Test_COLORFORMAT(reps) | tmp, read
 
