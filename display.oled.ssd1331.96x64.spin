@@ -14,6 +14,10 @@ CON
     COLOR_65K   = %01
     COLOR_65K2  = %10
 
+' Address increment mode
+    ADDR_HORIZ  = 0
+    ADDR_VERT   = 1
+
 OBJ
 
     core    : "core.con.ssd1331"
@@ -86,6 +90,20 @@ PUB Defaults | tmp[2]
     DisplayBounds (0, 0, 95, 63)
     DispInverted (FALSE)
     Clear
+
+PUB AddrIncMode(mode) | tmp
+
+    tmp := _sh_REMAPCOLOR
+    case mode
+        ADDR_HORIZ, ADDR_VERT:
+        OTHER:
+            return (tmp >> core#FLD_ADDRINC) & %1
+
+    _sh_REMAPCOLOR &= core#MASK_SEGREMAP
+    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | mode) & core#SSD1331_CMD_SETREMAP_MASK
+    tmp.byte[0] := core#SSD1331_CMD_SETREMAP
+    tmp.byte[1] := _sh_REMAPCOLOR
+    writeRegX (TRANS_CMD, 2, @tmp)
 
 PUB AllPixelsOn | tmp
 

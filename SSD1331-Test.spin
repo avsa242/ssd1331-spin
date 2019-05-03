@@ -46,6 +46,7 @@ PUB Main
     Setup
     oled.Defaults
     _row := 3
+    Test_ADDRINC (1)
     Test_INTERLACE (1)
     Test_MIRRORV (1)
     Test_COLORFORMAT (1)
@@ -70,6 +71,17 @@ PUB Main
     Test_MIRRORH (1)
     Test_DISPONOFF (1)
     Flash (LED)
+
+
+PUB Test_ADDRINC(reps) | tmp, read
+
+'    _expanded := TRUE
+    _row++
+    repeat reps
+        repeat tmp from oled#ADDR_HORIZ to oled#ADDR_VERT
+            oled.AddrIncMode (tmp)
+            read := oled.AddrIncMode (-3)
+            Message (string("ADDRINC"), tmp, read)
 
 
 PUB Test_INTERLACE(reps) | tmp, read

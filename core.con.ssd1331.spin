@@ -28,11 +28,13 @@ CON
 
     SSD1331_CMD_SETREMAP                = $A0
     SSD1331_CMD_SETREMAP_MASK           = $FF
+        FLD_ADDRINC                     = 0
         FLD_SEGREMAP                    = 1
         FLD_COMREMAP                    = 4
         FLD_COMSPLIT                    = 5
         FLD_COLORFORMAT                 = 6
         BITS_COLORFORMAT                = %11
+        MASK_ADDRINC                    = SSD1331_CMD_SETREMAP_MASK ^ (1 << FLD_ADDRINC)
         MASK_SEGREMAP                   = SSD1331_CMD_SETREMAP_MASK ^ (1 << FLD_SEGREMAP)
         MASK_COMREMAP                   = SSD1331_CMD_SETREMAP_MASK ^ (1 << FLD_COMREMAP)
         MASK_COMSPLIT                   = SSD1331_CMD_SETREMAP_MASK ^ (1 << FLD_COMSPLIT)
