@@ -120,6 +120,41 @@ PUB AllPixelsOff | tmp
     tmp := _sh_DISPMODE
     writeRegX (TRANS_CMD, 1, @tmp)
 
+PUB Box(sx, sy, ex, ey, box_rgb, fill_rgb) | tmp[3]
+
+    case sx
+        0..95:
+        OTHER:
+            return
+
+    case sy
+        0..63:
+        OTHER:
+            return
+
+    case ex
+        0..95:
+        OTHER:
+            return
+
+    case ey
+        0..63:
+        OTHER:
+            return
+
+    tmp.byte[0] := core#SSD1331_CMD_DRAWRECT
+    tmp.byte[1] := sx
+    tmp.byte[2] := sy
+    tmp.byte[3] := ex
+    tmp.byte[4] := ey
+    tmp.byte[5] := Color_R (box_rgb)
+    tmp.byte[6] := Color_G (box_rgb)
+    tmp.byte[7] := Color_B (box_rgb)
+    tmp.byte[8] := Color_R (fill_rgb)
+    tmp.byte[9] := Color_G (fill_rgb)
+    tmp.byte[10] := Color_B (fill_rgb)
+    writeRegX (TRANS_CMD, 11, @tmp)
+
 PUB Clear | tmp[2]
 
     tmp.byte[0] := core#SSD1331_CMD_NOP3
@@ -159,6 +194,18 @@ PUB ClockFreq(freq) | tmp
     tmp.byte[0] := core#SSD1331_CMD_CLOCKDIV
     tmp.byte[1] := freq
     writeRegX (TRANS_CMD, 2, @tmp)
+
+PUB Color_R(rgb888)
+
+    return (((rgb888 & $F800) >> 11) * 527 + 23 ) >> 6
+
+PUB Color_G(rgb888)
+
+    return (((rgb888 & $7E0) >> 5)  * 259 + 33 ) >> 6
+
+PUB Color_B(rgb888)
+
+    return ((rgb888 & $1F) * 527 + 23 ) >> 6
 
 PUB ColorDepth(format) | tmp
 
@@ -211,6 +258,48 @@ PUB ContrastC(level) | tmp
     tmp.byte[0] := core#SSD1331_CMD_CONTRASTC
     tmp.byte[1] := level
     writeRegX (TRANS_CMD, 2, @tmp)
+
+PUB Copy(sx, sy, ex, ey, dx, dy) | tmp[2]
+
+    case sx
+        0..95:
+        OTHER:
+            return
+
+    case sy
+        0..63:
+        OTHER:
+            return
+
+    case ex
+        0..95:
+        OTHER:
+            return
+
+    case ey
+        0..63:
+        OTHER:
+            return
+
+    case dx
+        0..95:
+        OTHER:
+            return
+
+    case dy
+        0..63:
+        OTHER:
+            return
+
+    tmp.byte[0] := core#SSD1331_CMD_COPY
+    tmp.byte[1] := sx
+    tmp.byte[2] := sy
+    tmp.byte[3] := ex
+    tmp.byte[4] := ey
+    tmp.byte[5] := dx
+    tmp.byte[6] := dy
+    writeRegX (TRANS_CMD, 7, @tmp)
+
 
 PUB CurrentLimit(divisor) | tmp
 
@@ -303,6 +392,38 @@ PUB Interlace(enabled) | tmp
     tmp.byte[0] := core#SSD1331_CMD_SETREMAP
     tmp.byte[1] := _sh_REMAPCOLOR
     writeRegX (TRANS_CMD, 2, @tmp)
+
+PUB Line(sx, sy, ex, ey, rgb) | tmp[2]
+
+    case sx
+        0..95:
+        OTHER:
+            return
+
+    case sy
+        0..63:
+        OTHER:
+            return
+
+    case ex
+        0..95:
+        OTHER:
+            return
+
+    case ey
+        0..63:
+        OTHER:
+            return
+
+    tmp.byte[0] := core#SSD1331_CMD_DRAWLINE
+    tmp.byte[1] := sx
+    tmp.byte[2] := sy
+    tmp.byte[3] := ex
+    tmp.byte[4] := ey
+    tmp.byte[5] := Color_R (rgb)
+    tmp.byte[6] := Color_G (rgb)
+    tmp.byte[7] := Color_B (rgb)
+    writeRegX (TRANS_CMD, 8, @tmp)
 
 PUB MirrorH(enabled) | tmp
 
@@ -435,17 +556,17 @@ PUB PrechargeSpeed(seg_a, seg_b, seg_c) | tmp[2]
     tmp.byte[5] := seg_c
     writeRegX (TRANS_CMD, 6, @tmp)
 
-PUB StartLine(line) | tmp
+PUB StartLine(disp_line) | tmp
 
     tmp := _sh_DISPSTARTLINE
-    case line
+    case disp_line
         0..63:
         OTHER:
             return tmp
 
-    _sh_DISPSTARTLINE := line
+    _sh_DISPSTARTLINE := disp_line
     tmp.byte[0] := core#SSD1331_CMD_STARTLINE
-    tmp.byte[1] := line
+    tmp.byte[1] := disp_line
     writeRegX (TRANS_CMD, 2, @tmp)
 
 PUB SubpixelOrder(order) | tmp
@@ -493,17 +614,17 @@ PUB VertAltScan(enabled) | tmp
     tmp.byte[1] := _sh_REMAPCOLOR
     writeRegX (TRANS_CMD, 2, @tmp)
 
-PUB VertOffset(line) | tmp
+PUB VertOffset(disp_line) | tmp
 
     tmp := _sh_DISPOFFSET
-    case line
+    case disp_line
         0..63:
         OTHER:
             return tmp
 
-    _sh_DISPOFFSET := line
+    _sh_DISPOFFSET := disp_line
     tmp.byte[0] := core#SSD1331_CMD_DISPLAYOFFSET
-    tmp.byte[1] := line
+    tmp.byte[1] := disp_line
     writeRegX (TRANS_CMD, 2, @tmp)
 
 PUB Reset
