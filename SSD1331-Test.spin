@@ -46,6 +46,7 @@ PUB Main
     Setup
     oled.Defaults
     _row := 3
+    Test_SUBPIX_ORDER (1)
     Test_ADDRINC (1)
     Test_INTERLACE (1)
     Test_MIRRORV (1)
@@ -73,6 +74,16 @@ PUB Main
     Flash (LED)
 
 
+PUB Test_SUBPIX_ORDER(reps) | tmp, read
+
+    _expanded := TRUE
+    _row++
+    repeat reps
+        repeat tmp from oled#SUBPIX_RGB to oled#SUBPIX_BGR
+            oled.SubpixelOrder (tmp)
+            read := oled.SubpixelOrder (-3)
+            Message (string("SUBPIX_ORDER"), tmp, read)
+
 PUB Test_ADDRINC(reps) | tmp, read
 
 '    _expanded := TRUE
@@ -82,7 +93,6 @@ PUB Test_ADDRINC(reps) | tmp, read
             oled.AddrIncMode (tmp)
             read := oled.AddrIncMode (-3)
             Message (string("ADDRINC"), tmp, read)
-
 
 PUB Test_INTERLACE(reps) | tmp, read
 

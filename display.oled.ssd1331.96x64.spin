@@ -18,6 +18,10 @@ CON
     ADDR_HORIZ  = 0
     ADDR_VERT   = 1
 
+' Subpixel order
+    SUBPIX_RGB  = 0
+    SUBPIX_BGR  = 1
+
 OBJ
 
     core    : "core.con.ssd1331"
@@ -443,6 +447,21 @@ PUB StartLine(line) | tmp
     _sh_DISPSTARTLINE := line
     tmp.byte[0] := core#SSD1331_CMD_STARTLINE
     tmp.byte[1] := line
+    writeRegX (TRANS_CMD, 2, @tmp)
+
+PUB SubpixelOrder(order) | tmp
+
+    tmp := _sh_REMAPCOLOR
+    case order
+        SUBPIX_RGB, SUBPIX_BGR:
+            order <<= core#FLD_SUBPIX_ORDER
+        OTHER:
+            return (tmp >> core#FLD_SUBPIX_ORDER) & %1
+
+    _sh_REMAPCOLOR &= core#MASK_SUBPIX_ORDER
+    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | order) & core#SSD1331_CMD_SETREMAP_MASK
+    tmp.byte[0] := core#SSD1331_CMD_SETREMAP
+    tmp.byte[1] := _sh_REMAPCOLOR
     writeRegX (TRANS_CMD, 2, @tmp)
 
 PUB VCOMHDeselect(mV) | tmp
