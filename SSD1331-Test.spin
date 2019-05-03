@@ -46,6 +46,7 @@ PUB Main
     Setup
     oled.Defaults
     _row := 3
+    Test_COMLRSWAP (1)
     Test_SUBPIX_ORDER (1)
     Test_ADDRINC (1)
     Test_INTERLACE (1)
@@ -74,9 +75,19 @@ PUB Main
     Flash (LED)
 
 
+PUB Test_COMLRSWAP(reps) | tmp, read
+
+'    _expanded := TRUE
+    _row++
+    repeat reps
+        repeat tmp from 0 to -1
+            oled.VertAltScan (tmp)
+            read := oled.VertAltScan (-3)
+            Message (string("COMLRSWAP"), tmp, read)
+
 PUB Test_SUBPIX_ORDER(reps) | tmp, read
 
-    _expanded := TRUE
+'    _expanded := TRUE
     _row++
     repeat reps
         repeat tmp from oled#SUBPIX_RGB to oled#SUBPIX_BGR

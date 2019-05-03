@@ -479,6 +479,21 @@ PUB VCOMHDeselect(mV) | tmp
     tmp.byte[1] := mV
     writeRegX (TRANS_CMD, 2, @tmp)
 
+PUB VertAltScan(enabled) | tmp
+
+    tmp := _sh_REMAPCOLOR
+    case ||enabled
+        0, 1:
+            enabled := (||enabled) << core#FLD_COMLR_SWAP
+        OTHER:
+            return ((tmp >> core#FLD_COMLR_SWAP) & %1) * TRUE
+
+    _sh_REMAPCOLOR &= core#MASK_COMLR_SWAP
+    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | enabled) & core#SSD1331_CMD_SETREMAP_MASK
+    tmp.byte[0] := core#SSD1331_CMD_SETREMAP
+    tmp.byte[1] := _sh_REMAPCOLOR
+    writeRegX (TRANS_CMD, 2, @tmp)
+
 PUB VertOffset(line) | tmp
 
     tmp := _sh_DISPOFFSET
