@@ -5,7 +5,7 @@
     Description: Low-level constants
     Copyright (c) 2019
     Started: Nov 18, 2018
-    Updated: May 3, 2019
+    Updated: May 4, 2019
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -16,7 +16,14 @@ CON
     SSD1331_CMD_DRAWRECT                = $22
     SSD1331_CMD_COPY                    = $23
     SSD1331_CMD_CLEAR                   = $25
+
     SSD1331_CMD_FILL                    = $26
+    SSD1331_CMD_FILL_MASK               = $11
+        FLD_FILL                        = 0
+        FLD_REVCOPY                     = 4
+        MASK_FILL                       = SSD1331_CMD_FILL_MASK ^ (1 << FLD_FILL)
+        MASK_REVCOPY                    = SSD1331_CMD_FILL_MASK ^ (1 << FLD_REVCOPY)
+
     SSD1331_CMD_SCROLLSETUP             = $27
     SSD1331_CMD_SCROLLSTOP              = $2E
     SSD1331_CMD_SCROLLSTART             = $2F

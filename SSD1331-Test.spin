@@ -46,6 +46,7 @@ PUB Main
     Setup
     oled.Defaults
     _row := 3
+    Test_FILL (1)
     Test_COMLRSWAP (1)
     Test_SUBPIX_ORDER (1)
     Test_ADDRINC (1)
@@ -74,6 +75,16 @@ PUB Main
     Test_DISPONOFF (1)
     Flash (LED)
 
+
+PUB Test_FILL(reps) | tmp, read
+
+    _expanded := TRUE
+    _row++
+    repeat reps
+        repeat tmp from 0 to -1
+            oled.Fill (tmp)
+            read := oled.Fill (-3)
+            Message (string("FILL"), tmp, read)
 
 PUB Test_COMLRSWAP(reps) | tmp, read
 
@@ -111,8 +122,8 @@ PUB Test_INTERLACE(reps) | tmp, read
     _row++
     repeat reps
         repeat tmp from 0 to -1
-            oled.Interlace (tmp)
-            read := oled.Interlace (-3)
+            oled.Interlaced (tmp)
+            read := oled.Interlaced (-3)
             Message (string("INTERLACE"), tmp, read)
 
     oled.MirrorV (FALSE)

@@ -1,11 +1,11 @@
 {
     --------------------------------------------
-    Filename:
-    Author:
-    Description:
-    Copyright (c) 20__
-    Started Month Day, Year
-    Updated Month Day, Year
+    Filename: SSD1331-Demo.spin
+    Author: Jesse Burt
+    Description: Simple demo for the SSD1331 driver
+    Copyright (c) 2019
+    Started Apr 28, 2019
+    Updated May 5, 2019
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -84,6 +84,7 @@ PUB Constrain(val, lower, upper)
 
 PUB Demo_BoxRND(reps) | sx, sy, ex, ey, c
 
+    oled.Fill (TRUE)
     repeat reps
         sx := RND (95)
         sy := RND (63)

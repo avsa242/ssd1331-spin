@@ -5,7 +5,7 @@
     Description: Driver for Solomon Systech 96x64 RGB OLED
     Copyright (c) 2019
     Started: Nov 18, 2018
-    Updated: May 3, 2019
+    Updated: May 4, 2019
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -48,10 +48,10 @@ VAR
     byte _sh_MASTERCCTRL, _sh_SECPRECHG[3], _sh_REMAPCOLOR, _sh_DISPSTARTLINE, _sh_DISPOFFSET
     byte _sh_DISPMODE, _sh_MULTIPLEX, _sh_DIM, _sh_MASTERCFG, _sh_DISPONOFF, _sh_POWERSAVE
     byte _sh_PHASE12PER, _sh_CLK, _sh_GRAYTABLE, _sh_PRECHGLEV, _sh_VCOMH, _sh_CMDLOCK
-    byte _sh_HVSCROLL
+    byte _sh_HVSCROLL, _sh_FILL
 
 PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN): okay
-  ''Startup the SPI system
+
     if lookdown(CS_PIN: 0..31)
         if lookdown(DC_PIN: 0..31)
             if lookdown(DIN_PIN: 0..31)
@@ -68,8 +68,8 @@ PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN): okay
 
 PUB Stop
 
+    AllPixelsOff
     DisplayEnabled (FALSE)
-    'other power-off code here
     spi.stop
 
 PUB Defaults | tmp[2]
@@ -391,6 +391,21 @@ PUB ExtSupply | tmp
 
     tmp.byte[0] := core#SSD1331_CMD_SETMASTER
     tmp.byte[1] := core#MASTERCFG_EXT_VCC
+    writeRegX (TRANS_CMD, 2, @tmp)
+
+PUB Fill(enabled) | tmp
+
+    tmp := _sh_FILL
+    case ||enabled
+        0, 1:
+            enabled := ||enabled & %1
+        OTHER:
+            return (tmp & %1) * TRUE
+
+    _sh_FILL &= core#MASK_FILL
+    _sh_FILL := (_sh_FILL | enabled) & core#SSD1331_CMD_FILL_MASK
+    tmp.byte[0] := core#SSD1331_CMD_FILL
+    tmp.byte[1] := _sh_FILL
     writeRegX (TRANS_CMD, 2, @tmp)
 
 PUB Interlaced(enabled) | tmp
