@@ -2,9 +2,10 @@
     --------------------------------------------
     Filename: core.con.ssd1331.spin
     Author: Jesse Burt
-    Copyright (c) 2018
+    Description: Low-level constants
+    Copyright (c) 2019
     Started: Nov 18, 2018
-    Updated: Nov 18, 2018
+    Updated: May 3, 2019
     See end of file for terms of use.
     --------------------------------------------
 }

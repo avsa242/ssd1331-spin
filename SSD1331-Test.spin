@@ -1,11 +1,11 @@
 {
     --------------------------------------------
-    Filename:
-    Author:
-    Description:
-    Copyright (c) 20__
-    Started Month Day, Year
-    Updated Month Day, Year
+    Filename: SSD1331-Test.spin
+    Author: Jesse Burt
+    Description: Test object for the SSD1331 driver
+    Copyright (c) 2019
+    Started Apr 28, 2019
+    Updated May 3, 2019
     See end of file for terms of use.
     --------------------------------------------
 }

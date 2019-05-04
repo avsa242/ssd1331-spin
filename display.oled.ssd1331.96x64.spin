@@ -1,3 +1,14 @@
+{
+    --------------------------------------------
+    Filename: display.oled.ssd1331.96x64.spin
+    Author: Jesse Burt
+    Description: Driver for Solomon Systech 96x64 RGB OLED
+    Copyright (c) 2019
+    Started: Nov 18, 2018
+    Updated: May 3, 2019
+    See end of file for terms of use.
+    --------------------------------------------
+}
 CON
 
 ' Transaction type selection
@@ -378,14 +389,14 @@ PUB ExtSupply | tmp
     tmp.byte[1] := core#MASTERCFG_EXT_VCC
     writeRegX (TRANS_CMD, 2, @tmp)
 
-PUB Interlace(enabled) | tmp
+PUB Interlaced(enabled) | tmp
 
     tmp := _sh_REMAPCOLOR
     case ||enabled
         0, 1:
-            enabled := (||enabled) << core#FLD_COMSPLIT
+            enabled := (not ||enabled) << core#FLD_COMSPLIT
         OTHER:
-            return ((tmp >> core#FLD_COMSPLIT) & %1) * TRUE
+            return not (((tmp >> core#FLD_COMSPLIT) & %1) * TRUE)
 
     _sh_REMAPCOLOR &= core#MASK_COMSPLIT
     _sh_REMAPCOLOR := (_sh_REMAPCOLOR | enabled) & core#SSD1331_CMD_SETREMAP_MASK
