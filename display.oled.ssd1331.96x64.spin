@@ -229,7 +229,11 @@ PUB ColorDepth(format) | tmp
 
     _sh_REMAPCOLOR &= core#MASK_COLORFORMAT
     _sh_REMAPCOLOR := _sh_REMAPCOLOR | format
-    writeRegX (TRANS_CMD, 1, @_sh_REMAPCOLOR)
+
+    tmp.byte[0] := core#SSD1331_CMD_SETREMAP
+    tmp.byte[1] := _sh_REMAPCOLOR
+
+    writeRegX (TRANS_CMD, 2, @tmp)
 
 PUB ContrastA(level) | tmp
 
