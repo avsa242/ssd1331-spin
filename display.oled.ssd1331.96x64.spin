@@ -586,6 +586,21 @@ PUB PrechargeSpeed(seg_a, seg_b, seg_c) | tmp[2]
     tmp.byte[5] := seg_c
     writeRegX (TRANS_CMD, 6, @tmp)
 
+PUB ReverseCopy(enabled) | tmp
+
+    tmp := _sh_FILL
+    case ||enabled
+        0, 1:
+            enabled := (||enabled << core#FLD_REVCOPY)
+        OTHER:
+            return ((tmp >> core#FLD_REVCOPY) & %1) * TRUE
+
+    _sh_FILL &= core#MASK_REVCOPY
+    _sh_FILL := (_sh_FILL | enabled) & core#SSD1331_CMD_FILL_MASK
+    tmp.byte[0] := core#SSD1331_CMD_FILL
+    tmp.byte[1] := _sh_FILL
+    writeRegX (TRANS_CMD, 2, @tmp)
+
 PUB StartLine(disp_line) | tmp
 
     tmp := _sh_DISPSTARTLINE

@@ -46,6 +46,7 @@ PUB Main
     Setup
     oled.Defaults
     _row := 3
+    Test_REVCOPY (1)
     Test_FILL (1)
     Test_COMLRSWAP (1)
     Test_SUBPIX_ORDER (1)
@@ -76,9 +77,19 @@ PUB Main
     Flash (LED)
 
 
-PUB Test_FILL(reps) | tmp, read
+PUB Test_REVCOPY(reps) | tmp, read
 
     _expanded := TRUE
+    _row++
+    repeat reps
+        repeat tmp from 0 to -1
+            oled.ReverseCopy (tmp)
+            read := oled.ReverseCopy (-3)
+            Message (string("REVCOPY"), tmp, read)
+
+PUB Test_FILL(reps) | tmp, read
+
+'    _expanded := TRUE
     _row++
     repeat reps
         repeat tmp from 0 to -1
