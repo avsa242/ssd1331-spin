@@ -24,6 +24,8 @@ CON
     LED         = cfg#LED1
 
     BUFFSZ      = 96*64
+    XMAX        = 95
+    YMAX        = 63
 
 OBJ
 
@@ -31,35 +33,23 @@ OBJ
     ser     : "com.serial.terminal"
     time    : "time"
     oled    : "display.oled.ssd1331.96x64"
+    int     : "string.integer"
 
 VAR
 
-    long rndSeed
-    long a_min, a_max, a_range
-    long b_min, b_max, b_range
-    long c_min, c_max, c_range
-    long d_min, d_max, d_range
+    long _rndseed
+    long _a_min, _a_max, _a_range
+    long _b_min, _b_max, _b_range
+    long _c_min, _c_max, _c_range
+    long _d_min, _d_max, _d_range
+    long _fps, _fps_stack[50]
+    word _framebuff[6144]
     byte _ser_cog, _oled_cog
 
 PUB Main
 
     Setup
     SwapBMBytes
-    a_min := 0
-    a_max := 16383
-    a_range := a_max - a_min
-
-    b_min := a_max + 1
-    b_max := 32767
-    b_range := b_max - b_min
-
-    c_min := b_max + 1
-    c_max := 49151
-    c_range := c_max - c_min
-
-    d_min := c_max + 1
-    d_max := 65535
-    d_range := d_max - d_min
 
     oled.AddrIncMode (oled#ADDR_HORIZ)
     oled.MirrorH (FALSE)
@@ -68,33 +58,80 @@ PUB Main
     oled.MirrorV (FALSE)
     oled.Interlaced (FALSE)
     oled.ColorDepth (oled#COLOR_65K)
+    oled.Clear
 
-    oled.Clear
     Demo_Bitmap (1)
-    time.Sleep (5)
+    time.Sleep (2)
+
+    Demo_Sine (500)
+    time.Sleep (2)
+
     Demo_LineRND (5000)
-    time.Sleep (5)
+    time.Sleep (2)
     oled.Clear
+
     Demo_PlotRND (5000)
+    time.Sleep (2)
     oled.Clear
+
     Demo_BoxRND (5000)
-    time.Sleep (5)
+    time.Sleep (2)
+    oled.Clear
+
     Demo_HLineSpectrum (1)
     Demo_HPlotSpectrum (1)
     time.Sleep (2)
+
     oled.Copy (0, 0, 20, 20, 20, 20)
     time.Sleep (2)
+
     Demo_FadeOut (1)
+
     oled.AllPixelsOff
     oled.DisplayEnabled (FALSE)
-    Flash (LED)
+    Flash (LED, 100)
+
+PUB Point(x, y, c)
+' Set pixel at x, y to color in framebuffer
+    _framebuff[(y * 96) + x] := c
+
+PUB GetPoint(x, y)
+' Get color of pixel at x, y in framebuffer
+    return _framebuff[(y * 96) + x]
+
+PUB Clear
+' Clear framebuffer
+    wordfill(@_framebuff, $00_00, BUFFSZ)
+
+PUB Demo_BitmapThruput(reps)
+' Draw nothing - send empty bitmap to display
+'   For benchmarking purposes only
+'   Display framerate on serial terminal
+    repeat reps
+        oled.Bitmap (@_framebuff, 12288)
+        _fps++
+
+PUB Demo_Sine(reps) | r, x, y, modifier, offset, div
+' Draw a sine wave the length of the screen, influenced by
+'  the system counter
+    div := 2048
+    offset := YMAX/2                                    ' Offset for Y axis
+
+    repeat r from 1 to reps
+        repeat x from 0 to XMAX
+            modifier := (||cnt / 1_000_000)           ' Use system counter as modifier
+            y := offset + sin(x * modifier) / div
+            Point(x, y, $FF_FF)
+        oled.Bitmap (@_framebuff, 12288)
+        _fps++
+        Clear
 
 PUB Demo_Bitmap(reps) | sx, sy
-
+' Draw bitmap
     oled.Bitmap (@splash[68], BUFFSZ*2)
 
 PUB Demo_BoxRND(reps) | sx, sy, ex, ey, c
-
+' Draw random filled boxes
     oled.Fill (TRUE)
     repeat reps
         sx := RND (95)
@@ -106,21 +143,21 @@ PUB Demo_BoxRND(reps) | sx, sy, ex, ey, c
         oled.Box (sx, sy, ex, ey, c, c)
 
 PUB Demo_FadeOut(reps) | c
-
+' Fade out display
     repeat c from 127 to 0
-        oled.ContrastA (||c)
-        oled.ContrastB (||c)
-        oled.ContrastC (||c)
-        time.MSleep (50)
+        oled.ContrastA (c)
+        oled.ContrastB (c)
+        oled.ContrastC (c)
+        time.MSleep (30)
 
 PUB Demo_HLineSpectrum(reps) | x, c
-
+' Plot spectrum from GetColor using full-height vertical lines
     repeat x from 0 to 95
         c := GetColor (x * 689)
         oled.Line (x, 0, x, 63, c)
 
 PUB Demo_LineRND(reps) | sx, sy, ex, ey, c
-
+' Draw random lines
     repeat reps
         sx := RND (95)
         sy := RND (63)
@@ -130,14 +167,14 @@ PUB Demo_LineRND(reps) | sx, sy, ex, ey, c
         oled.Line (sx, sy, ex, ey, c)
 
 PUB Demo_HPlotSpectrum(reps) | x, y, c
-
+' Plot spectrum from GetColor using pixels
     repeat y from 32-5 to 32+5
         repeat x from 0 to 95
             c := c24to16 (GetColor (x*689))
             oled.PlotXY (x, y, c)
 
 PUB Demo_PlotRND(reps) | x, y, c
-
+' Draw random pixels
     repeat reps
         x := RND (95)
         y := RND (63)
@@ -145,29 +182,63 @@ PUB Demo_PlotRND(reps) | x, y, c
         oled.PlotXY (x, y, c)
 
 PUB Constrain(val, lower, upper)
-
+' Return value clamped to lower and upper bounds
     return lower #> val <# upper
 
-PUB GetColor(val) | red, green, blue, inmax, outmax, divisor, tmp
+PUB C24to16(rgb888)
+' Return 16-bit color word of 24-bit color value
+    return (Col_GB (rgb888) << 8) | Col_RG (rgb888)
 
+PUB Col_RG(RGB)
+' Return Red-Green component of 16-bit color value
+    return (RGB & $FF00) >> 8
+
+PUB Col_GB(RGB)
+' Return Green-Blue component of 16-bit color value
+    return RGB & $FF
+
+PUB Flash(led_pin, delay)
+' Flash LED forever
+    dira[led_pin] := 1
+    repeat
+        !outa[led_pin]
+        time.MSleep (delay)
+
+PUB FPS
+' Displays approximation of frame rate on terminal
+' Send the _fps value to the terminal once every second, and clear it
+    repeat
+        time.Sleep (1)
+        ser.Position (0, 5)
+        ser.Str (string("FPS: "))
+        ser.Str (int.DecPadded (_fps, 3))
+
+        ser.Position (0, 6)
+        ser.Str (string("Approximate throughput: "))
+        ser.Str (int.DecPadded (_fps*12288, 7))
+        ser.Str (string("bytes/sec"))
+        _fps := 0
+
+PUB GetColor(val) | red, green, blue, inmax, outmax, divisor, tmp
+' Return color from gradient scale, setup by SetColorScale
     inmax := 65535
     outmax := 255
     divisor := Constrain (inmax, 0, 65535)/outmax
 
     case val
-        a_min..a_max:
+        _a_min.._a_max:
             red := 0
             green := 0
             blue := Constrain ((val/divisor), 0, 255)
-        b_min..b_max:
+        _b_min.._b_max:
             red := 0
             green := Constrain ((val/divisor), 0, 255)
             blue := 255
-        c_min..c_max:
+        _c_min.._c_max:
             red := Constrain ((val/divisor), 0, 255)
             green := 255
             blue := Constrain (255-(val/divisor), 0, 255)
-        d_min..d_max:
+        _d_min.._d_max:
             red := 255
             green := Constrain (255-(val/divisor), 0, 255)
             blue := 0
@@ -177,40 +248,43 @@ PUB GetColor(val) | red, green, blue, inmax, outmax, divisor, tmp
 
 ' RGB565 format
     return ((red >> 3) << 11) | ((green >> 2) << 5) | (blue >> 3)
-'    tmp := ((red >> 3) << 11) | ((green >> 2) << 5) | (blue >> 3)
-'    result := RG16bitColor (tmp)
-'    result := result | (GB16bitColor (tmp) << 8)
 
-PUB RND(upperlimit) | i       'Returns a random number between 0 and upperlimit
-
-  i :=? rndSeed
+PUB RND(max_val) | i
+' Returns a random number between 0 and max_val
+  i :=? _rndseed
   i >>= 16
-  i *= (upperlimit + 1)
+  i *= (max_val + 1)
   i >>= 16
 
   return i
 
-PUB RG16bitColor(RGB)
-    return (RGB & $FF00) >> 8
-'    return ((RGB & $1F_00_00) >> 13) | ((RGB & $E0_00) >> 13)
+PUB Sin(angle)
+' Sin angle is 13-bit; Returns a 16-bit signed value
+    result := angle << 1 & $FFE
+    if angle & $800
+       result := word[$F000 - result]
+    else
+       result := word[$E000 + result]
+    if angle & $1000
+       -result
 
-PUB GB16bitColor(RGB)
-    return RGB & $FF
-'    return ((RGB & $7FF) >> 3) | (RGB & $1F)
+PUB SetColorScale
+' Set up 4-point scale for GetColor
+    _a_min := 0
+    _a_max := 16383
+    _a_range := _a_max - _a_min
 
-PUB c24to16(rgb888)
+    _b_min := _a_max + 1
+    _b_max := 32767
+    _b_range := _b_max - _b_min
 
-    return (GB16bitColor (rgb888) << 8) | RG16bitColor (rgb888)
+    _c_min := _b_max + 1
+    _c_max := 49151
+    _c_range := _c_max - _c_min
 
-PUB SwapBMBytes| i, tmp
-' Reverse the byte order of the bitmap at address 'splash'
-' This is required specifically for the Propeller Beanie logo splash bitmap,
-'   not required in general.
-    repeat i from 0 to 12288-1 step 2
-        tmp.byte[0] := byte[@splash][i+1]
-        tmp.byte[1] := byte[@splash][i]
-        byte[@splash][i] := tmp.byte[0]
-        byte[@splash][i+1] := tmp.byte[1]
+    _d_min := _c_max + 1
+    _d_max := 65535
+    _d_range := _d_max - _d_min
 
 PUB Setup
 
@@ -223,20 +297,25 @@ PUB Setup
     else
         ser.Str (string("SSD1331 driver failed to start - halting", ser#NL))
         Stop
+    SetColorScale
+    cognew(fps, @_fps_stack)
 
 PUB Stop
 
     oled.Stop
     time.MSleep (5)
     ser.Stop
-    Flash(LED)
+    Flash(LED, 500)
 
-PUB Flash(led_pin)
-
-    dira[led_pin] := 1
-    repeat
-        !outa[led_pin]
-        time.MSleep (500)
+PUB SwapBMBytes| i, tmp
+' Reverse the byte order of the bitmap at address 'splash'
+' This is required specifically for the Propeller Beanie logo splash bitmap,
+'   not required in general.
+    repeat i from 0 to 12288-1 step 2
+        tmp.byte[0] := byte[@splash][i+1]
+        tmp.byte[1] := byte[@splash][i]
+        byte[@splash][i] := tmp.byte[0]
+        byte[@splash][i+1] := tmp.byte[1]
 
 DAT
 
