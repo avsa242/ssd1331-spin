@@ -237,6 +237,12 @@ PUB ColorDepth(format) | tmp
 
     writeRegX (TRANS_CMD, 2, @tmp)
 
+PUB Contrast(level)
+
+    ContrastA (level)
+    ContrastB (level)
+    ContrastC (level)
+
 PUB ContrastA(level) | tmp
 
     tmp := _sh_SETCONTRAST_A

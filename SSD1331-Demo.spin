@@ -27,6 +27,9 @@ CON
     XMAX        = 95
     YMAX        = 63
 
+    BT_FRAME    = 0
+    BT_UNIT     = 1
+
 OBJ
 
     cfg     : "core.con.boardcfg.flip"
@@ -42,9 +45,10 @@ VAR
     long _b_min, _b_max, _b_range
     long _c_min, _c_max, _c_range
     long _d_min, _d_max, _d_range
-    long _fps, _fps_stack[50]
+    long _bench_iter, _bench_iter_stack[50]
     word _framebuff[6144]
-    byte _ser_cog, _oled_cog
+    byte _ser_cog, _oled_cog, _bench_cog
+    byte _bench_type
 
 PUB Main
 
@@ -60,21 +64,28 @@ PUB Main
     oled.ColorDepth (oled#COLOR_65K)
     oled.Clear
 
+    oled.AllPixelsOff
     Demo_Bitmap (1)
-    time.Sleep (2)
+    oled.Contrast (0)
+    oled.DispInverted (FALSE)
+    Demo_FadeIn (1, 10)
+    time.Sleep (3)
+    Demo_FadeOut (1, 10)
+    oled.Clear
 
+    oled.Contrast (127)
     Demo_Sine (500)
     time.Sleep (2)
 
-    Demo_LineRND (5000)
+    Demo_LineRND (8000)
     time.Sleep (2)
     oled.Clear
 
-    Demo_PlotRND (5000)
+    Demo_PlotRND (8000)
     time.Sleep (2)
     oled.Clear
 
-    Demo_BoxRND (5000)
+    Demo_BoxRND (8000)
     time.Sleep (2)
     oled.Clear
 
@@ -85,10 +96,12 @@ PUB Main
     oled.Copy (0, 0, 20, 20, 20, 20)
     time.Sleep (2)
 
-    Demo_FadeOut (1)
+    Demo_FadeOut (1, 30)
 
     oled.AllPixelsOff
     oled.DisplayEnabled (FALSE)
+    time.MSleep (5)
+    Stop
     Flash (LED, 100)
 
 PUB Point(x, y, c)
@@ -107,15 +120,17 @@ PUB Demo_BitmapThruput(reps)
 ' Draw nothing - send empty bitmap to display
 '   For benchmarking purposes only
 '   Display framerate on serial terminal
+    _bench_type := BT_FRAME
     repeat reps
         oled.Bitmap (@_framebuff, 12288)
-        _fps++
+        _bench_iter++
 
 PUB Demo_Sine(reps) | r, x, y, modifier, offset, div
 ' Draw a sine wave the length of the screen, influenced by
 '  the system counter
     div := 2048
     offset := YMAX/2                                    ' Offset for Y axis
+    _bench_type := BT_FRAME
 
     repeat r from 1 to reps
         repeat x from 0 to XMAX
@@ -123,15 +138,19 @@ PUB Demo_Sine(reps) | r, x, y, modifier, offset, div
             y := offset + sin(x * modifier) / div
             Point(x, y, $FF_FF)
         oled.Bitmap (@_framebuff, 12288)
-        _fps++
+        _bench_iter++
         Clear
 
 PUB Demo_Bitmap(reps) | sx, sy
 ' Draw bitmap
-    oled.Bitmap (@splash[68], BUFFSZ*2)
+    _bench_type := BT_FRAME
+    repeat reps
+        oled.Bitmap (@splash[68], BUFFSZ*2)
+        _bench_iter++
 
 PUB Demo_BoxRND(reps) | sx, sy, ex, ey, c
 ' Draw random filled boxes
+    _bench_type := BT_UNIT
     oled.Fill (TRUE)
     repeat reps
         sx := RND (95)
@@ -141,23 +160,36 @@ PUB Demo_BoxRND(reps) | sx, sy, ex, ey, c
         c := GetColor (RND (65535))
 
         oled.Box (sx, sy, ex, ey, c, c)
+        _bench_iter++
 
-PUB Demo_FadeOut(reps) | c
+PUB Demo_FadeIn(reps, delay) | c
+' Fade out display
+    repeat c from 0 to 127
+        oled.ContrastA (c)
+        oled.ContrastB (c)
+        oled.ContrastC (c)
+        time.MSleep (delay)
+
+PUB Demo_FadeOut(reps, delay) | c
 ' Fade out display
     repeat c from 127 to 0
         oled.ContrastA (c)
         oled.ContrastB (c)
         oled.ContrastC (c)
-        time.MSleep (30)
+        time.MSleep (delay)
 
 PUB Demo_HLineSpectrum(reps) | x, c
 ' Plot spectrum from GetColor using full-height vertical lines
-    repeat x from 0 to 95
-        c := GetColor (x * 689)
-        oled.Line (x, 0, x, 63, c)
+    _bench_type := BT_UNIT
+    repeat reps
+        repeat x from 0 to 95
+            c := GetColor (x * 689)
+            oled.Line (x, 0, x, 63, c)
+            _bench_iter++
 
 PUB Demo_LineRND(reps) | sx, sy, ex, ey, c
 ' Draw random lines
+    _bench_type := BT_UNIT
     repeat reps
         sx := RND (95)
         sy := RND (63)
@@ -165,21 +197,27 @@ PUB Demo_LineRND(reps) | sx, sy, ex, ey, c
         ey := RND (63)
         c := GetColor (RND (65535))
         oled.Line (sx, sy, ex, ey, c)
+        _bench_iter++
 
 PUB Demo_HPlotSpectrum(reps) | x, y, c
 ' Plot spectrum from GetColor using pixels
-    repeat y from 32-5 to 32+5
-        repeat x from 0 to 95
-            c := c24to16 (GetColor (x*689))
-            oled.PlotXY (x, y, c)
+    _bench_type := BT_UNIT
+    repeat reps
+        repeat y from 32-5 to 32+5
+            repeat x from 0 to 95
+                c := c24to16 (GetColor (x*689))
+                oled.PlotXY (x, y, c)
+                _bench_iter++
 
 PUB Demo_PlotRND(reps) | x, y, c
 ' Draw random pixels
+    _bench_type := BT_UNIT
     repeat reps
         x := RND (95)
         y := RND (63)
         c := c24to16 (GetColor (RND (65535)))
         oled.PlotXY (x, y, c)
+        _bench_iter++
 
 PUB Constrain(val, lower, upper)
 ' Return value clamped to lower and upper bounds
@@ -206,18 +244,30 @@ PUB Flash(led_pin, delay)
 
 PUB FPS
 ' Displays approximation of frame rate on terminal
-' Send the _fps value to the terminal once every second, and clear it
+' Send the _bench_iter value to the terminal once every second, and clear it
     repeat
         time.Sleep (1)
-        ser.Position (0, 5)
-        ser.Str (string("FPS: "))
-        ser.Str (int.DecPadded (_fps, 3))
+        case _bench_type
+            BT_FRAME:
+                ser.Position (0, 5)
+                ser.Str (string("FPS: "))
+                ser.Str (int.DecPadded (_bench_iter, 3))
 
-        ser.Position (0, 6)
-        ser.Str (string("Approximate throughput: "))
-        ser.Str (int.DecPadded (_fps*12288, 7))
-        ser.Str (string("bytes/sec"))
-        _fps := 0
+                ser.Position (0, 6)
+                ser.Str (string("Approximate throughput: "))
+                ser.Str (int.DecPadded (_bench_iter*12288, 7))
+                ser.Str (string("bytes/sec"))
+
+            BT_UNIT:
+                ser.Position (0, 5)
+                ser.Str (string("Units/sec: "))
+                ser.Str (int.DecPadded (_bench_iter, 6))
+
+                ser.Position (0, 6)
+                ser.Str (string("Approximate throughput: "))
+                ser.Str (string("N/A"))
+
+        _bench_iter := 0
 
 PUB GetColor(val) | red, green, blue, inmax, outmax, divisor, tmp
 ' Return color from gradient scale, setup by SetColorScale
@@ -298,14 +348,15 @@ PUB Setup
         ser.Str (string("SSD1331 driver failed to start - halting", ser#NL))
         Stop
     SetColorScale
-    cognew(fps, @_fps_stack)
+    _bench_cog := cognew(fps, @_bench_iter_stack)
 
 PUB Stop
 
     oled.Stop
     time.MSleep (5)
+    cogstop(_bench_cog)
+    time.MSleep (5)
     ser.Stop
-    Flash(LED, 500)
 
 PUB SwapBMBytes| i, tmp
 ' Reverse the byte order of the bitmap at address 'splash'
