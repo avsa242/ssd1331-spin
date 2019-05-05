@@ -5,7 +5,7 @@
     Description: Driver for Solomon Systech 96x64 RGB OLED
     Copyright (c) 2019
     Started: Nov 18, 2018
-    Updated: May 4, 2019
+    Updated: May 5, 2019
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -37,7 +37,6 @@ OBJ
 
     core    : "core.con.ssd1331"
     time    : "time"
-    io      : "io"
     spi     : "com.spi.fast"
 
 VAR
@@ -72,18 +71,12 @@ PUB Stop
     DisplayEnabled (FALSE)
     spi.stop
 
-PUB Defaults | tmp[2]
+PUB Defaults
 
     ColorDepth (COLOR_65K)
     MirrorH (FALSE)
     DisplayEnabled (FALSE)
     AllPixelsOff
-
-    tmp := 0
-    tmp.byte[0] := core#SSD1331_CMD_SETREMAP
-    tmp.byte[1] := $60
-    writeRegX (TRANS_CMD, 2, @tmp)
-
     StartLine (0)
     VertOffset (0)
     DispInverted (FALSE)
@@ -91,9 +84,9 @@ PUB Defaults | tmp[2]
     ExtSupply
     PowerSaving (TRUE)
     Phase1Adj (7)
-    Phase1Adj (4)
+    Phase2Adj (4)
     ClockFreq ($D)
-    ClockDiv (0)
+    ClockDiv (1)
     PrechargeSpeed (127, 127, 127)
     PrechargeLevel (500)
     VCOMHDeselect (830)
@@ -130,6 +123,15 @@ PUB AllPixelsOff | tmp
     _sh_DISPMODE := core#SSD1331_CMD_DISPLAYALLOFF
     tmp := _sh_DISPMODE
     writeRegX (TRANS_CMD, 1, @tmp)
+
+PUB Bitmap(buf_addr, nr_bytes) | tmp[2]
+
+    NoOp
+    NoOp
+    DisplayBounds (0, 0, 95, 63)
+    StartLine (0)
+    VertOffset (0)
+    writeRegX (TRANS_DATA, nr_bytes, buf_addr)
 
 PUB Box(sx, sy, ex, ey, box_rgb, fill_rgb) | tmp[3]
 
@@ -485,6 +487,10 @@ PUB MirrorV(enabled) | tmp
     tmp.byte[1] := _sh_REMAPCOLOR
     writeRegX (TRANS_CMD, 2, @tmp)
 
+PUB NoOp | tmp
+
+    tmp := core#SSD1331_CMD_NOP3
+    writeRegX (TRANS_CMD, 1, @tmp)
 
 PUB Phase1Adj(clks) | tmp
 
@@ -684,10 +690,8 @@ PUB writeRegX(trans_type, nr_bytes, buf_addr)
 
     case trans_type
         TRANS_DATA:
-'            io.High (_DC)
             outa[_DC] := 1
         TRANS_CMD:
-'            io.Low (_DC)
             outa[_DC] := 0
 
         OTHER:
