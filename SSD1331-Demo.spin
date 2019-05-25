@@ -23,9 +23,13 @@ CON
 
     LED         = cfg#LED1
 
-    BUFFSZ      = 96*64
-    XMAX        = 95
-    YMAX        = 63
+    WIDTH       = 96
+    HEIGHT      = 64
+    BPP         = 16
+    BPL         = WIDTH * (BPP/8)
+    BUFFSZ      = (WIDTH * HEIGHT) * 2
+    XMAX        = WIDTH - 1
+    YMAX        = HEIGHT - 1
 
     BT_FRAME    = 0
     BT_UNIT     = 1
@@ -37,6 +41,7 @@ OBJ
     time    : "time"
     oled    : "display.oled.ssd1331.96x64"
     int     : "string.integer"
+    gfx     : "display.gfx.bitmap"
 
 VAR
 
@@ -46,14 +51,14 @@ VAR
     long _c_min, _c_max, _c_range
     long _d_min, _d_max, _d_range
     long _bench_iter, _bench_iter_stack[50]
-    word _framebuff[6144]
+    word _framebuff[BUFFSZ/2]
     byte _ser_cog, _oled_cog, _bench_cog
     byte _bench_type
 
 PUB Main
 
     Setup
-    SwapBMBytes
+    'SwapBMBytes
 
     oled.AddrIncMode (oled#ADDR_HORIZ)
     oled.MirrorH (FALSE)
@@ -65,15 +70,20 @@ PUB Main
     oled.Clear
 
     oled.AllPixelsOff
-    Demo_Bitmap (1)
-    oled.Contrast (0)
+    'Demo_Bitmap (1)
+'    oled.Contrast (0)
     oled.DispInverted (FALSE)
-    Demo_FadeIn (1, 10)
-    time.Sleep (3)
-    Demo_FadeOut (1, 10)
-    oled.Clear
+'    Demo_FadeIn (1, 10)
+'    time.Sleep (3)
+'    Demo_FadeOut (1, 10)
+'    oled.Clear
 
     oled.Contrast (127)
+
+    Demo_MEMScroller ($0000, $FFFF)
+    Demo_ExpandingCircle (5)
+    time.Sleep (2)
+
     Demo_Sine (500)
     time.Sleep (2)
 
@@ -90,7 +100,6 @@ PUB Main
     oled.Clear
 
     Demo_HLineSpectrum (1)
-    Demo_HPlotSpectrum (1)
     time.Sleep (2)
 
     oled.Copy (0, 0, 20, 20, 20, 20)
@@ -104,25 +113,13 @@ PUB Main
     Stop
     Flash (LED, 100)
 
-PUB Point(x, y, c)
-' Set pixel at x, y to color in framebuffer
-    _framebuff[(y * 96) + x] := c
-
-PUB GetPoint(x, y)
-' Get color of pixel at x, y in framebuffer
-    return _framebuff[(y * 96) + x]
-
-PUB Clear
-' Clear framebuffer
-    wordfill(@_framebuff, $00_00, BUFFSZ)
-
 PUB Demo_BitmapThruput(reps)
 ' Draw nothing - send empty bitmap to display
 '   For benchmarking purposes only
 '   Display framerate on serial terminal
     _bench_type := BT_FRAME
     repeat reps
-        oled.Bitmap (@_framebuff, 12288)
+        oled.Bitmap (@_framebuff, BUFFSZ)
         _bench_iter++
 
 PUB Demo_Sine(reps) | r, x, y, modifier, offset, div
@@ -136,18 +133,18 @@ PUB Demo_Sine(reps) | r, x, y, modifier, offset, div
         repeat x from 0 to XMAX
             modifier := (||cnt / 1_000_000)           ' Use system counter as modifier
             y := offset + sin(x * modifier) / div
-            Point(x, y, $FF_FF)
+            gfx.Plot (x, y, $FF_FF)
         oled.Bitmap (@_framebuff, 12288)
         _bench_iter++
-        Clear
+        gfx.Clear
 
-PUB Demo_Bitmap(reps) | sx, sy
+{PUB Demo_Bitmap(reps) | sx, sy
 ' Draw bitmap
     _bench_type := BT_FRAME
     repeat reps
         oled.Bitmap (@splash[68], BUFFSZ*2)
         _bench_iter++
-
+}
 PUB Demo_BoxRND(reps) | sx, sy, ex, ey, c
 ' Draw random filled boxes
     _bench_type := BT_UNIT
@@ -162,20 +159,30 @@ PUB Demo_BoxRND(reps) | sx, sy, ex, ey, c
         oled.Box (sx, sy, ex, ey, c, c)
         _bench_iter++
 
+PUB Demo_ExpandingCircle(reps) | i, x, y, c
+'' Draws circles at random locations, expanding in radius
+    _rndseed := cnt
+    _bench_type := BT_FRAME
+    repeat reps
+        x := rnd(XMAX)
+        y := rnd(YMAX)
+        c := C24to16(GetColor (rnd(65535)))
+        repeat i from 1 to 31
+            gfx.Circle (x, y, ||i, c + i)
+            oled.Bitmap(@_framebuff, BUFFSZ)
+            _bench_iter++
+            gfx.Clear
+
 PUB Demo_FadeIn(reps, delay) | c
 ' Fade out display
     repeat c from 0 to 127
-        oled.ContrastA (c)
-        oled.ContrastB (c)
-        oled.ContrastC (c)
+        oled.Contrast (c)
         time.MSleep (delay)
 
 PUB Demo_FadeOut(reps, delay) | c
 ' Fade out display
     repeat c from 127 to 0
-        oled.ContrastA (c)
-        oled.ContrastB (c)
-        oled.ContrastC (c)
+        oled.Contrast (c)
         time.MSleep (delay)
 
 PUB Demo_HLineSpectrum(reps) | x, c
@@ -199,15 +206,13 @@ PUB Demo_LineRND(reps) | sx, sy, ex, ey, c
         oled.Line (sx, sy, ex, ey, c)
         _bench_iter++
 
-PUB Demo_HPlotSpectrum(reps) | x, y, c
-' Plot spectrum from GetColor using pixels
-    _bench_type := BT_UNIT
-    repeat reps
-        repeat y from 32-5 to 32+5
-            repeat x from 0 to 95
-                c := c24to16 (GetColor (x*689))
-                oled.PlotXY (x, y, c)
-                _bench_iter++
+PUB Demo_MEMScroller(start_addr, end_addr) | pos, st, en
+' Dump Propeller Hub RAM (or ROM) to the framebuffer
+    _bench_type := BT_FRAME
+    repeat pos from start_addr to end_addr-BUFFSZ step BPL
+        wordmove(@_framebuff, pos, BUFFSZ/2)
+        oled.Bitmap (@_framebuff, BUFFSZ)
+        _bench_iter++
 
 PUB Demo_PlotRND(reps) | x, y, c
 ' Draw random pixels
@@ -215,7 +220,7 @@ PUB Demo_PlotRND(reps) | x, y, c
     repeat reps
         x := RND (95)
         y := RND (63)
-        c := c24to16 (GetColor (RND (65535)))
+        c := GetColor (RND (65535))
         oled.PlotXY (x, y, c)
         _bench_iter++
 
@@ -341,6 +346,8 @@ PUB Setup
     repeat until _ser_cog := ser.Start (115_200)
     ser.Clear
     ser.Str(string("Serial terminal started", ser#NL))
+    gfx.Start (WIDTH, HEIGHT, 16, @_framebuff)
+'    gfx.FontAddress (fnt5x8.BaseAddr)
     if _oled_cog := oled.Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN)
         ser.Str (string("SSD1331 driver started", ser#NL))
         oled.Defaults
@@ -358,7 +365,7 @@ PUB Stop
     time.MSleep (5)
     ser.Stop
 
-PUB SwapBMBytes| i, tmp
+{PUB SwapBMBytes| i, tmp
 ' Reverse the byte order of the bitmap at address 'splash'
 ' This is required specifically for the Propeller Beanie logo splash bitmap,
 '   not required in general.
@@ -367,7 +374,8 @@ PUB SwapBMBytes| i, tmp
         tmp.byte[1] := byte[@splash][i]
         byte[@splash][i] := tmp.byte[0]
         byte[@splash][i+1] := tmp.byte[1]
-
+}
+{
 DAT
 
 splash  byte $42, $4D, $46, $30, $00, $00, $00, $00, $00, $00, $46, $00, $00, $00, $38, $00
@@ -774,7 +782,7 @@ splash  byte $42, $4D, $46, $30, $00, $00, $00, $00, $00, $00, $46, $00, $00, $0
         byte $4C, $73, $4D, $73, $4C, $73, $CE, $7B, $CF, $7B, $CF, $7B, $51, $8C, $71, $8C, $B2, $94, $55, $AD, $96, $B5, $38, $C6, $18, $C6, $BA, $D6, $5D, $EF, $BE, $F7 
         byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF 
         byte $FF, $FF, $FF, $FF, $FF, $FF  
-
+}
 DAT
 {
     --------------------------------------------------------------------------------------------------------

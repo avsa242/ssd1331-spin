@@ -126,11 +126,11 @@ PUB AllPixelsOff | tmp
 
 PUB Bitmap(buf_addr, nr_bytes) | tmp[2]
 
-    NoOp
-    NoOp
+'    NoOp
+'    NoOp
     DisplayBounds (0, 0, 95, 63)
-    StartLine (0)
-    VertOffset (0)
+'    StartLine (0)
+'    VertOffset (0)
     writeRegX (TRANS_DATA, nr_bytes, buf_addr)
 
 PUB Box(sx, sy, ex, ey, box_rgb, fill_rgb) | tmp[3]
@@ -703,7 +703,7 @@ PUB writeRegX(trans_type, nr_bytes, buf_addr)
         OTHER:
             return
 
-    spi.writeSPI (TRUE, buf_addr, nr_bytes) ' Write SPI transaction with blocking enabled
+    spi.write (TRUE, buf_addr, nr_bytes) ' Write SPI transaction with blocking enabled
 
 
 {PRI POR
