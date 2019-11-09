@@ -42,6 +42,7 @@ OBJ
     oled    : "display.oled.ssd1331.96x64"
     int     : "string.integer"
     gfx     : "display.gfx.bitmap"
+    fnt5x8  : "font.5x8"
 
 VAR
 
@@ -58,7 +59,7 @@ VAR
 PUB Main
 
     Setup
-    'SwapBMBytes
+    SwapBMBytes
 
     oled.AddrIncMode (oled#ADDR_HORIZ)
     oled.MirrorH (FALSE)
@@ -70,17 +71,19 @@ PUB Main
     oled.Clear
 
     oled.AllPixelsOff
-    'Demo_Bitmap (1)
-'    oled.Contrast (0)
+    oled.Bitmap(@splash, 12288)
+    oled.Contrast (0)
     oled.DispInverted (FALSE)
-'    Demo_FadeIn (1, 10)
-'    time.Sleep (3)
-'    Demo_FadeOut (1, 10)
-'    oled.Clear
+    Demo_FadeIn (1, 10)
+    time.Sleep (3)
+    Demo_FadeOut (1, 10)
+    oled.Clear
 
     oled.Contrast (127)
 
     Demo_MEMScroller ($0000, $FFFF)
+    time.Sleep(2)
+
     Demo_ExpandingCircle (5)
     time.Sleep (2)
 
@@ -224,6 +227,63 @@ PUB Demo_PlotRND(reps) | x, y, c
         oled.PlotXY (x, y, c)
         _bench_iter++
 
+PUB Demo_Text(reps) | col, row, maxcol, maxrow, ch, st
+'' Sequentially draws the whole font table to the screen, for half of 'reps'
+''  then random characters for the second half
+    maxcol := (WIDTH/8)-1   'XXX In the future, pull part of this from a font def file,
+    maxrow := (HEIGHT/8)-1  ' based on its size
+    gfx.FGColor ($FFFF)
+    gfx.Position (2,2)
+    gfx.Char (65)
+    oled.Bitmap (@_framebuff, BUFFSZ)
+{    ch := $00
+    ser.Hex (gfx.FGColor ($FFFF), 8)
+    ser.NewLine
+    ser.Hex (gfx.BGColor ($0000), 8)
+    repeat reps/2
+        repeat row from 0 to 19'maxrow
+            repeat col from 0 to 7'maxcol
+                ch++
+                if ch > $7F
+                    ch := $00
+                gfx.Position (col, row)
+                gfx.Char (ch)
+        oled.Bitmap (@_framebuff, BUFFSZ)
+        _bench_iter++
+
+    repeat reps/2
+        repeat row from 0 to maxrow
+            repeat col from 0 to maxcol
+                gfx.Position (col, row)
+                gfx.Char (rnd(127))
+        oled.Bitmap(@_framebuff, BUFFSZ)
+        _bench_iter++
+}
+PUB TermChr(ch) | j, mask, i, r, _row, _col, _font_width, _fgcolor, _bgcolor, _font_addr
+
+    _font_addr := fnt5x8.BaseAddr
+    _col := _row := 0
+    _fgcolor := $FFFF
+    _bgcolor := $0000
+    _font_width := fnt5x8#WIDTH
+    repeat j from 0 to 7
+        mask := $00000001
+        repeat i from 0 to 7
+            r := byte[_font_addr][8 * ch + j]
+            if r & mask
+'                ser.Char ("*")
+'                byte[@_framebuff][(_row * WIDTH - 1) + (_col * _font_width)] := _fgcolor.byte[1]
+                word[@_framebuff][(_row * WIDTH) + (_col * _font_width)] := _fgcolor.word[0]
+                ser.Hex (word[@_framebuff][(_row * WIDTH) + (_col * _font_width)], 4)
+
+            else
+'                ser.Char (" ")
+                word[@_framebuff][(_row * WIDTH) + (_col * _font_width)] := _bgcolor.word[0]
+'                byte[@_framebuff][(_row * WIDTH - 1) + (_col * _font_width)] := _bgcolor.byte[1]
+'                byte[@_framebuff][(_row * WIDTH - 1) + (_col * _font_width)] := _bgcolor.byte[0]
+            mask <<= 1
+        ser.NewLine
+
 PUB Constrain(val, lower, upper)
 ' Return value clamped to lower and upper bounds
     return lower #> val <# upper
@@ -347,7 +407,8 @@ PUB Setup
     ser.Clear
     ser.Str(string("Serial terminal started", ser#NL))
     gfx.Start (WIDTH, HEIGHT, 16, @_framebuff)
-'    gfx.FontAddress (fnt5x8.BaseAddr)
+    gfx.FontAddress (fnt5x8.BaseAddr)
+    gfx.FontSize (5, 8)
     if _oled_cog := oled.Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN)
         ser.Str (string("SSD1331 driver started", ser#NL))
         oled.Defaults
@@ -355,17 +416,17 @@ PUB Setup
         ser.Str (string("SSD1331 driver failed to start - halting", ser#NL))
         Stop
     SetColorScale
-    _bench_cog := cognew(fps, @_bench_iter_stack)
+'    _bench_cog := cognew(fps, @_bench_iter_stack)
 
 PUB Stop
 
     oled.Stop
     time.MSleep (5)
-    cogstop(_bench_cog)
+'    cogstop(_bench_cog)
     time.MSleep (5)
     ser.Stop
 
-{PUB SwapBMBytes| i, tmp
+PUB SwapBMBytes| i, tmp
 ' Reverse the byte order of the bitmap at address 'splash'
 ' This is required specifically for the Propeller Beanie logo splash bitmap,
 '   not required in general.
@@ -374,8 +435,8 @@ PUB Stop
         tmp.byte[1] := byte[@splash][i]
         byte[@splash][i] := tmp.byte[0]
         byte[@splash][i+1] := tmp.byte[1]
-}
-{
+
+
 DAT
 
 splash  byte $42, $4D, $46, $30, $00, $00, $00, $00, $00, $00, $46, $00, $00, $00, $38, $00
@@ -782,7 +843,7 @@ splash  byte $42, $4D, $46, $30, $00, $00, $00, $00, $00, $00, $46, $00, $00, $0
         byte $4C, $73, $4D, $73, $4C, $73, $CE, $7B, $CF, $7B, $CF, $7B, $51, $8C, $71, $8C, $B2, $94, $55, $AD, $96, $B5, $38, $C6, $18, $C6, $BA, $D6, $5D, $EF, $BE, $F7 
         byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF 
         byte $FF, $FF, $FF, $FF, $FF, $FF  
-}
+
 DAT
 {
     --------------------------------------------------------------------------------------------------------
