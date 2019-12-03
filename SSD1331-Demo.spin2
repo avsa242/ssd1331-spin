@@ -50,7 +50,7 @@ OBJ
     cfg     : "core.con.boardcfg.p2eval"
     ser     : "com.serial.terminal.ansi"
     time    : "time"
-    oled    : "display.oled.ssd1331.96x64.spin2"
+    oled    : "display.oled.ssd1331.spi.spin2"
     int     : "string.integer"
     fnt5x8  : "font.5x8"
 
