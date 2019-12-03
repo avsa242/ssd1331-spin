@@ -31,3 +31,4 @@ This is a P8X32A/Propeller, P2X8C4M64P/Propeller 2 driver object for the Solomon
 - [x] Bitmap transfer
 - [ ] Scrolling
 - [ ] Size optimization
+- [ ] Re-write the demo such that each routine runs for a set time period, and implement benchmarking for that period of time

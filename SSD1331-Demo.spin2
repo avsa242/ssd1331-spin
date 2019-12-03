@@ -28,11 +28,11 @@ CON
     SER_TX      = cfg#SER_TX
     SER_BAUD    = 2_000_000
 
-    RES_PIN     = 32
-    DC_PIN      = 33
+    RES_PIN     = 36
+    DC_PIN      = 35
     CS_PIN      = 34
-    CLK_PIN     = 35
-    DIN_PIN     = 36
+    CLK_PIN     = 33
+    DIN_PIN     = 32
 
     WIDTH       = 96
     HEIGHT      = 64
@@ -66,7 +66,7 @@ VAR
     byte _ser_cog, _oled_cog, _bench_cog
     byte _bench_type
 
-PUB Main | x, y
+PUB Main
 
     Setup
     oled.ClockDiv(1)
@@ -239,6 +239,8 @@ PUB Demo_LineRND(reps) | sx, sy, ex, ey, c
         ey := RND (63)
         c := (?_rndseed >> 26) << 11 | (?_rndseed >> 25) << 5 | (?_rndseed >> 26)
         oled.LineAccel (sx, sy, ex, ey, c)
+'        oled.Line (sx, sy, ex, ey, c)
+'        oled.Update
         _bench_iter++
 
 PUB Demo_MEMScroller(start_addr, end_addr) | pos, st, en
@@ -256,7 +258,7 @@ PUB Demo_PlotRND(reps) | x, y, c
         x := RND (95)
         y := RND (63)
         c := (?_rndseed >> 26) << 11 | (?_rndseed >> 25) << 5 | (?_rndseed >> 26)
-        oled.PlotDirect (x, y, c)
+        oled.PlotAccel (x, y, c)
 '        oled.Plot(x, y, c)         'Much slower
 '        oled.Update
         _bench_iter++
