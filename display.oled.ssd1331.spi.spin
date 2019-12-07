@@ -156,10 +156,10 @@ PUB BoxAccel(sx, sy, ex, ey, box_rgb, fill_rgb) | tmp[3]
     tmp.byte[3] := ex
     tmp.byte[4] := ey
     tmp.byte[5] := RGB565_R5 (box_rgb)
-    tmp.byte[6] := RGB565_G5 (box_rgb)
+    tmp.byte[6] := RGB565_G6 (box_rgb)
     tmp.byte[7] := RGB565_B5 (box_rgb)
     tmp.byte[8] := RGB565_R5 (fill_rgb)
-    tmp.byte[9] := RGB565_G5 (fill_rgb)
+    tmp.byte[9] := RGB565_G6 (fill_rgb)
     tmp.byte[10] := RGB565_B5 (fill_rgb)
     writeReg (TRANS_CMD, 11, @tmp)
 
@@ -466,7 +466,7 @@ PUB LineAccel(sx, sy, ex, ey, rgb) | tmp[2]
     tmp.byte[3] := ex
     tmp.byte[4] := ey
     tmp.byte[5] := RGB565_R5 (rgb)
-    tmp.byte[6] := RGB565_G5 (rgb)
+    tmp.byte[6] := RGB565_G6 (rgb)
     tmp.byte[7] := RGB565_B5 (rgb)
     writeReg (TRANS_CMD, 8, @tmp)
 
@@ -544,10 +544,10 @@ PUB PlotAccel(x, y, rgb) | tmp[2]
     y := 0 #> y <# _disp_height-1
     tmp.byte[0] := core#SSD1331_CMD_SETCOLUMN
     tmp.byte[1] := x
-    tmp.byte[2] := 95
+    tmp.byte[2] := x
     tmp.byte[3] := core#SSD1331_CMD_SETROW
     tmp.byte[4] := y
-    tmp.byte[5] := 63
+    tmp.byte[5] := y
     
     writeReg (TRANS_CMD, 6, @tmp)
 
