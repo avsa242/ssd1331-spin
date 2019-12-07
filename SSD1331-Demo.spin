@@ -62,7 +62,7 @@ PUB Main
 
     Setup
     oled.ClockDiv(1)
-    oled.ClockFreq(15)
+    oled.ClockFreq(980)
     oled.AddrIncMode (oled#ADDR_HORIZ)
     oled.MirrorH (FALSE)
     oled.SubpixelOrder (oled#SUBPIX_RGB)
@@ -79,79 +79,64 @@ PUB Main
     oled.Contrast (0)
     oled.DispInverted (FALSE)
     Demo_FadeIn (1, 10)
-    time.Sleep (3)
+    time.Sleep (2)
     Demo_FadeOut (1, 10)
     oled.ClearAll
     oled.Contrast (127)
 
-    ser.Str(string("Demo_MEMScroller"))
     Demo_MEMScroller ($0000, $FFFF)
     time.Sleep(2)
     oled.ClearAll
 
-    ser.Str(string("Demo_Circle"))
     Demo_Circle (100)
     time.Sleep (2)
     oled.ClearAll
 
-    ser.Str(string("Demo_Sine"))
     Demo_Sine (500)
     time.Sleep (2)
     oled.ClearAll
 
-    ser.Str(string("Demo_LineAccel"))
     Demo_LineAccel (15_000)
     time.Sleep (2)
     oled.ClearAll
 
-    ser.Str(string("Demo_LineBitmap"))
     Demo_LineBitmap (1_000)
     time.Sleep (2)
     oled.ClearAll
 
-    ser.Str(string("Demo_PlotAccel"))
     Demo_PlotAccel (15_000)
     time.Sleep (2)
     oled.ClearAll
 
     oled.DisplayBounds(0, 0, 95, 63)    'Need to reset this here because PlotAccel changes it
 
-    ser.Str(string("Demo_PlotBitmap"))
     Demo_PlotBitmap (1000)
     time.Sleep (2)
     oled.ClearAll
 
-    ser.Str(string("Demo_BoxAccel"))
     Demo_BoxAccel(15_000)
     time.Sleep (2)
     oled.ClearAll
 
-    ser.Str(string("Demo_BoxBitmap"))
     Demo_BoxBitmap(500)
     time.Sleep (2)
     oled.ClearAll
 
-    ser.Str(string("Demo_HLineSpectrumAccel"))
     Demo_HLineSpectrumAccel (1)
     time.Sleep (2)
 
-    ser.Str(string("CopyAccel"))
     oled.CopyAccel (0, 0, 20, 20, 20, 20)
     time.Sleep (2)
 
-    ser.Str(string("Demo_FadeOut"))
     Demo_FadeOut (1, 30)
 
-    ser.Str(string("AllPixelsOff"))
-    oled.AllPixelsOff
-    oled.DisplayEnabled (FALSE)
-    time.MSleep (5)
     Stop
     FlashLED (LED, 100)
 
 PUB Demo_Sine(reps) | r, x, y, modifier, offset, div
 ' Draw a sine wave the length of the screen, influenced by
 '  the system counter
+    ser.Str(string("Demo_Sine", ser#NL))
     div := 2048
     offset := YMAX/2                                    ' Offset for Y axis
     _bench_type := BT_FRAME
@@ -167,6 +152,7 @@ PUB Demo_Sine(reps) | r, x, y, modifier, offset, div
 
 PUB Demo_Bitmap(reps)
 ' Draw bitmap
+    ser.Str(string("Demo_Bitmap", ser#NL))
     _bench_type := BT_FRAME
     repeat reps
         oled.Bitmap (@splash, BUFFSZ, 0)
@@ -175,6 +161,7 @@ PUB Demo_Bitmap(reps)
 
 PUB Demo_BoxAccel(reps) | sx, sy, ex, ey, c
 ' Draw random filled boxes using the display's accelerated method
+    ser.Str(string("Demo_BoxAccel", ser#NL))
     _bench_type := BT_UNIT
     repeat reps
         sx := RND (95)
@@ -187,6 +174,7 @@ PUB Demo_BoxAccel(reps) | sx, sy, ex, ey, c
 
 PUB Demo_BoxBitmap(reps) | sx, sy, ex, ey, c
 ' Draw random filled boxes using the bitmap library's method
+    ser.Str(string("Demo_BoxBitmap", ser#NL))
     _bench_type := BT_UNIT
     repeat reps
         sx := RND (95)
@@ -200,6 +188,7 @@ PUB Demo_BoxBitmap(reps) | sx, sy, ex, ey, c
 
 PUB Demo_Circle(reps) | r, x, y, c
 '' Draws random circles
+    ser.Str(string("Demo_Circle", ser#NL))
     _rndseed := cnt
     _bench_type := BT_FRAME
     repeat reps
@@ -213,18 +202,21 @@ PUB Demo_Circle(reps) | r, x, y, c
 
 PUB Demo_FadeIn(reps, delay) | c
 ' Fade out display
+    ser.Str(string("Demo_FadeIn", ser#NL))
     repeat c from 0 to 127
         oled.Contrast (c)
         time.MSleep (delay)
 
 PUB Demo_FadeOut(reps, delay) | c
 ' Fade out display
+    ser.Str(string("Demo_FadeOut", ser#NL))
     repeat c from 127 to 0
         oled.Contrast (c)
         time.MSleep (delay)
 
 PUB Demo_HLineSpectrumAccel(reps) | x, c
 ' Plot spectrum from GetColor using full-height vertical lines, using the display's accelerated method
+    ser.Str(string("Demo_HLineSpectrumAccel", ser#NL))
     _bench_type := BT_UNIT
     repeat reps
         repeat x from 0 to 95
@@ -234,6 +226,7 @@ PUB Demo_HLineSpectrumAccel(reps) | x, c
 
 PUB Demo_LineAccel(reps) | sx, sy, ex, ey, c
 ' Draw random lines, using the display's accelerated method
+    ser.Str(string("Demo_LineAccel", ser#NL))
     _bench_type := BT_UNIT
     repeat reps
         sx := RND (95)
@@ -246,6 +239,7 @@ PUB Demo_LineAccel(reps) | sx, sy, ex, ey, c
 
 PUB Demo_LineBitmap(reps) | sx, sy, ex, ey, c
 ' Draw random lines, using the bitmap library's method
+    ser.Str(string("Demo_LineBitmap", ser#NL))
     _bench_type := BT_UNIT
     repeat reps
         sx := RND (95)
@@ -259,6 +253,7 @@ PUB Demo_LineBitmap(reps) | sx, sy, ex, ey, c
 
 PUB Demo_MEMScroller(start_addr, end_addr) | pos, st, en
 ' Dump Propeller Hub RAM (or ROM) to the framebuffer
+    ser.Str(string("Demo_MEMScroller", ser#NL))
     _bench_type := BT_FRAME
     repeat pos from start_addr to end_addr-BUFFSZ step BPL
         wordmove(@_framebuff, pos, BUFFSZ/2)
@@ -267,6 +262,7 @@ PUB Demo_MEMScroller(start_addr, end_addr) | pos, st, en
 
 PUB Demo_PlotAccel(reps) | x, y, c
 ' Draw random pixels, using the display's accelerated method
+    ser.Str(string("Demo_PlotAccel", ser#NL))
     _bench_type := BT_UNIT
     repeat reps
         x := RND (95)
@@ -278,6 +274,7 @@ PUB Demo_PlotAccel(reps) | x, y, c
 
 PUB Demo_PlotBitmap(reps) | x, y, c
 ' Draw random pixels, using the bitmap library's method
+    ser.Str(string("Demo_PlotBitmap", ser#NL))
     _bench_type := BT_UNIT
     repeat reps
         x := RND (95)
@@ -286,18 +283,6 @@ PUB Demo_PlotBitmap(reps) | x, y, c
         oled.Plot(x, y, c)
         oled.Update
         _bench_iter++
-
-PUB C24to16(rgb888)
-' Return 16-bit color word of 24-bit color value
-    return (Col_GB (rgb888) << 8) | Col_RG (rgb888)
-
-PUB Col_RG(RGB)
-' Return Red-Green component of 16-bit color value
-    return (RGB & $FF00) >> 8
-
-PUB Col_GB(RGB)
-' Return Green-Blue component of 16-bit color value
-    return RGB & $FF
 
 PUB FlashLED(led_pin, delay)
 ' Flash LED forever
@@ -357,8 +342,6 @@ PUB GetColor(val) | red, green, blue, inmax, outmax, divisor, tmp
             green := 255-(val/divisor)
             blue := 0
         OTHER:
-' RGB888 format
-'    return (red << 16) | (green << 8) | blue
 
 ' RGB565 format
     return ((red >> 3) << 11) | ((green >> 2) << 5) | (blue >> 3)
@@ -423,6 +406,8 @@ PUB Stop
     time.MSleep (5)
     if _bench_cog
         cogstop(_bench_cog)
+    time.MSleep (5)
+    ser.Stop
 
 PRI SwapBMBytes| i, tmp
 ' Reverse the byte order of the bitmap at address 'splash'

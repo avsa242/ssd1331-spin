@@ -99,7 +99,7 @@ PUB Defaults
     PowerSaving (TRUE)
     Phase1Adj (7)
     Phase2Adj (4)
-    ClockFreq ($D)
+    ClockFreq (956)
     ClockDiv (1)
     PrechargeSpeed (127, 127, 127)
     PrechargeLevel (500)
@@ -191,15 +191,17 @@ PUB ClockDiv(divider) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB ClockFreq(freq) | tmp
-' Set display clock frequency
-'   Valid values: 0..15
+' Set display clock frequency, in kHz
+'   Valid values: 800..980, in steps of 12
 '   Any other value returns the current setting
     tmp := _sh_CLK
     case freq
-        0..15:
-            freq <<= core#FLD_FOSCFREQ
+        800, 812, 824, 836, 848, 860, 872, 884, 896, 908, 920, 932, 944, 956, 968, 980:
+            freq := lookdownz(freq: 800, 812, 824, 836, 848, 860, 872, 884, 896, 908, 920, 932, 944, 956, 968, 980) << core#FLD_FOSCFREQ
         OTHER:
-            return (tmp >> core#FLD_FOSCFREQ) & core#BITS_FOSCFREQ
+            tmp := (tmp >> core#FLD_FOSCFREQ) & core#BITS_FOSCFREQ
+            result := lookupz (tmp: 800, 812, 824, 836, 848, 860, 872, 884, 896, 908, 920, 932, 944, 956, 968, 980)
+            return
 
     _sh_CLK &= core#MASK_FOSCFREQ
     _sh_CLK := _sh_CLK | freq
@@ -433,7 +435,11 @@ PUB Fill(enabled) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB Interlaced(enabled) | tmp
-
+' Alternate every other display line:
+' Lines 0..31 will appear on even rows (starting on row 0)
+' Lines 32..63 will appear on odd rows (starting on row 1)
+'   Valid values: TRUE (-1 or 1), FALSE (0)
+'   Any other value returns the current setting
     tmp := _sh_REMAPCOLOR
     case ||enabled
         0, 1:
