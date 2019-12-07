@@ -39,7 +39,7 @@ OBJ
     cfg     : "core.con.boardcfg.flip"
     ser     : "com.serial.terminal"
     time    : "time"
-    oled    : "display.oled.ssd1331.96x64"
+    oled    : "display.oled.ssd1331.spi"
     int     : "string.integer"
     gfx     : "display.gfx.bitmap"
     fnt5x8  : "font.5x8"

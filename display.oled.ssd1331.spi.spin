@@ -705,6 +705,8 @@ PUB writeRegX(trans_type, nr_bytes, buf_addr)
 
     spi.write (TRUE, buf_addr, nr_bytes) ' Write SPI transaction with blocking enabled
 
+#include "lib.gfx.bitmap.spin"
+
 
 {PRI POR
 'shadow reg binary blob: array of bytes set during startup
