@@ -70,15 +70,8 @@ PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN): okay
                             _MOSI := DIN_PIN
                             _SCK := CLK_PIN
                             _CS := CS_PIN
-'                            io.High(_DC)
-'                            io.Output(_DC)
-'                            io.Output(_RES)
-'                            io.High(_RES)
-'                            io.High(_CS)
-                            dira[_DC] := 1
-'                            outa[_DC] := 1
-                            dira[_RES] := 1
-'                            outa[_RES] := 1
+                            io.Output(_DC)
+                            io.Output(_RES)
                             Reset
                             return okay
     return FALSE
@@ -157,12 +150,12 @@ PUB BoxAccel(sx, sy, ex, ey, box_rgb, fill_rgb) | tmp[3]
     tmp.byte[2] := sy
     tmp.byte[3] := ex
     tmp.byte[4] := ey
-    tmp.byte[5] := Color_R (box_rgb)
-    tmp.byte[6] := Color_G (box_rgb)
-    tmp.byte[7] := Color_B (box_rgb)
-    tmp.byte[8] := Color_R (fill_rgb)
-    tmp.byte[9] := Color_G (fill_rgb)
-    tmp.byte[10] := Color_B (fill_rgb)
+    tmp.byte[5] := RGB565_R5 (box_rgb)
+    tmp.byte[6] := RGB565_G5 (box_rgb)
+    tmp.byte[7] := RGB565_B5 (box_rgb)
+    tmp.byte[8] := RGB565_R5 (fill_rgb)
+    tmp.byte[9] := RGB565_G5 (fill_rgb)
+    tmp.byte[10] := RGB565_B5 (fill_rgb)
     writeReg (TRANS_CMD, 11, @tmp)
 
 PUB ClearAccel | tmp[2]
@@ -204,18 +197,6 @@ PUB ClockFreq(freq) | tmp
     tmp.byte[0] := core#SSD1331_CMD_CLOCKDIV
     tmp.byte[1] := freq
     writeReg (TRANS_CMD, 2, @tmp)
-
-PUB Color_R(rgb888)
-
-    return (((rgb888 & $F800) >> 11) * 527 + 23 ) >> 6
-
-PUB Color_G(rgb888)
-
-    return (((rgb888 & $7E0) >> 5)  * 259 + 33 ) >> 6
-
-PUB Color_B(rgb888)
-
-    return ((rgb888 & $1F) * 527 + 23 ) >> 6
 
 PUB ColorDepth(format) | tmp
 
@@ -439,9 +420,9 @@ PUB LineAccel(sx, sy, ex, ey, rgb) | tmp[2]
     tmp.byte[2] := sy
     tmp.byte[3] := ex
     tmp.byte[4] := ey
-    tmp.byte[5] := Color_R (rgb)
-    tmp.byte[6] := Color_G (rgb)
-    tmp.byte[7] := Color_B (rgb)
+    tmp.byte[5] := RGB565_R5 (rgb)
+    tmp.byte[6] := RGB565_G5 (rgb)
+    tmp.byte[7] := RGB565_B5 (rgb)
     writeReg (TRANS_CMD, 8, @tmp)
 
 PUB MirrorH(enabled) | tmp
@@ -669,17 +650,11 @@ PUB VertOffset(disp_line) | tmp
 
 PUB Reset
 
-'    io.High(_RES)
-'    time.MSleep (1)
-'    io.Low(_RES)
-'    time.MSleep (10)
-'    io.High(_RES)
-
-    outa[_RES] := 1
-    time.msleep(1)
-    outa[_RES] := 0
-    time.msleep(10)
-    outa[_RES] := 1
+    io.High(_RES)
+    time.MSleep (1)
+    io.Low(_RES)
+    time.MSleep (10)
+    io.High(_RES)
 
 PUB Update
 ' Send the draw buffer to the display
@@ -693,11 +668,9 @@ PRI writeReg(trans_type, nr_bytes, buff_addr) | tmp
 
     case trans_type
         TRANS_DATA:
-'            io.High(_DC)
-            outa[_DC] := 1
+            io.High(_DC)
         TRANS_CMD:
-'            io.Low(_DC)
-            outa[_DC] := 0
+            io.Low(_DC)
 
         OTHER:
             return
