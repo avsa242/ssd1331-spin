@@ -113,7 +113,10 @@ PUB Defaults
     ClearAccel
 
 PUB AddrIncMode(mode) | tmp
-
+' Set display addressing mode
+'   Valid values:
+'   ADDR_HORZ (0): Horizontal addressing mode
+'   ADDR_VERT (1): Vertical addressing mode
     tmp := _sh_REMAPCOLOR
     case mode
         ADDR_HORIZ, ADDR_VERT:
@@ -127,13 +130,15 @@ PUB AddrIncMode(mode) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB AllPixelsOn | tmp
-
+' Turn all pixels on
+'   NOTE: Doesn't affect display's RAM contents
     _sh_DISPMODE := core#SSD1331_CMD_DISPLAYALLON
     tmp := _sh_DISPMODE
     writeReg (TRANS_CMD, 1, @tmp)
 
 PUB AllPixelsOff | tmp
-
+' Turn all pixels off
+'   NOTE: Doesn't affect display's RAM contents
     _sh_DISPMODE := core#SSD1331_CMD_DISPLAYALLOFF
     tmp := _sh_DISPMODE
     writeReg (TRANS_CMD, 1, @tmp)
@@ -169,7 +174,9 @@ PUB ClearAccel | tmp[2]
     writeReg (TRANS_CMD, 6, @tmp)
 
 PUB ClockDiv(divider) | tmp
-
+' Set display clock divider
+'   Valid values: 1..16
+'   Any other value returns the current setting
     tmp := _sh_CLK
     case divider
         1..16:
@@ -184,7 +191,9 @@ PUB ClockDiv(divider) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB ClockFreq(freq) | tmp
-
+' Set display clock frequency
+'   Valid values: 0..15
+'   Any other value returns the current setting
     tmp := _sh_CLK
     case freq
         0..15:
@@ -199,7 +208,12 @@ PUB ClockFreq(freq) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB ColorDepth(format) | tmp
-
+' Set expected color format of pixel data
+'   Valid values:
+'       COLOR_256 (0): 8-bit/256 color
+'       COLOR_65K (1): 16-bit/65536 color format 1
+'       COLOR_65K2 (2): 16-bit/65536 color format 2
+'   Any other value returns the current setting
     tmp := _sh_REMAPCOLOR
     case format
         COLOR_256, COLOR_65K, COLOR_65K2:
@@ -216,13 +230,17 @@ PUB ColorDepth(format) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB Contrast(level)
-
+' Set contrast/brightness level
+'   Valid values: 0..255
+'   Any other value returns the current setting
     ContrastA (level)
     ContrastB (level)
     ContrastC (level)
 
 PUB ContrastA(level) | tmp
-
+' Set contrast/brightness level for subpixel color A
+'   Valid values: 0..255
+'   Any other value returns the current setting
     tmp := _sh_SETCONTRAST_A
     case level
         0..255:
@@ -235,7 +253,9 @@ PUB ContrastA(level) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB ContrastB(level) | tmp
-
+' Set contrast/brightness level for subpixel color B
+'   Valid values: 0..255
+'   Any other value returns the current setting
     tmp := _sh_SETCONTRAST_B
     case level
         0..255:
@@ -248,7 +268,9 @@ PUB ContrastB(level) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB ContrastC(level) | tmp
-
+' Set contrast/brightness level for subpixel color C
+'   Valid values: 0..255
+'   Any other value returns the current setting
     tmp := _sh_SETCONTRAST_C
     case level
         0..255:
@@ -261,7 +283,11 @@ PUB ContrastC(level) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB CopyAccel(sx, sy, ex, ey, dx, dy) | tmp[2]
-
+' Copy a region of the display to another location, using the display's native/accelerated method
+'   Valid values:
+'       sx, ex, dx: 0..95
+'       sy, ey, dy: 0..63
+'   Any other value will be ignored
     case sx
         0..95:
         OTHER:
@@ -316,7 +342,11 @@ PUB CurrentLimit(divisor) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB DisplayBounds(sx, sy, ex, ey) | tmp[2]
-
+' Set drawable display region for subsequent drawing operations
+'   Valid values:
+'       sx, ex: 0..95
+'       sy, ey: 0..63
+'   Any other value will be ignored
     ifnot lookup(sx: 0..95) or lookup(sy: 0..63) or lookup(ex: 0..95) or lookup(ey: 0..63)
         return
 
@@ -333,7 +363,12 @@ PUB DisplayBounds(sx, sy, ex, ey) | tmp[2]
     writeReg (TRANS_CMD, 3, @tmp)
 
 PUB DisplayEnabled(enabled) | tmp
-
+' Enable display power
+'   Valid values:
+'       DISP_OFF/FALSE (0): Turn off display power
+'       DISP_ON/TRUE (-1 or 1): Turn on display power
+'       DISP_ON_DIM (2): Turn on display power, at reduced brightness
+'   Any other value returns the current setting
     tmp := _sh_DISPONOFF
     case ||enabled
         DISP_OFF, DISP_ON, DISP_ON_DIM:
@@ -345,7 +380,9 @@ PUB DisplayEnabled(enabled) | tmp
     writeReg (TRANS_CMD, 1, @_sh_DISPONOFF)
 
 PUB DisplayLines(lines) | tmp
-
+' Set maximum number of display lines
+'   Valid values: 16..64
+'   Any other value returns the current setting
     tmp := _sh_MULTIPLEX
     case lines
         16..64:
@@ -359,7 +396,9 @@ PUB DisplayLines(lines) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB DispInverted(enabled) | tmp
-
+' Invert display colors
+'   Valid values: TRUE (-1 or 1), FALSE (0)
+'   Any other value returns the current setting
     tmp := _sh_DISPMODE
     case ||enabled
         0, 1:
@@ -379,7 +418,7 @@ PUB ExtSupply | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB Fill(enabled) | tmp
-
+' Enable the fill option for the display's native/accelerated Box drawing primitive
     tmp := _sh_FILL
     case ||enabled
         0, 1:
@@ -426,7 +465,9 @@ PUB LineAccel(sx, sy, ex, ey, rgb) | tmp[2]
     writeReg (TRANS_CMD, 8, @tmp)
 
 PUB MirrorH(enabled) | tmp
-
+' Mirror the display, horizontally
+'   Valid values: TRUE (-1 or 1), FALSE (0)
+'   Any other value returns the current setting
     tmp := _sh_REMAPCOLOR
     case ||enabled
         0, 1:
@@ -441,7 +482,9 @@ PUB MirrorH(enabled) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB MirrorV(enabled) | tmp
-
+' Mirror the display, vertically
+'   Valid values: TRUE (-1 or 1), FALSE (0)
+'   Any other value returns the current setting
     tmp := _sh_REMAPCOLOR
     case ||enabled
         0, 1:
@@ -490,7 +533,7 @@ PUB Phase2Adj(clks) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB PlotAccel(x, y, rgb) | tmp[2]
-
+' Plot a pixel at x, y in color rgb, using the display's native/accelerated method
     x := 0 #> x <# _disp_width-1
     y := 0 #> y <# _disp_height-1
     tmp.byte[0] := core#SSD1331_CMD_SETCOLUMN
@@ -507,7 +550,9 @@ PUB PlotAccel(x, y, rgb) | tmp[2]
     writeReg (TRANS_DATA, 2, @rgb)
 
 PUB PowerSaving(enabled) | tmp
-
+' Enable power-saving mode
+'   Valid values: TRUE (-1 or 1), FALSE (0)
+'   Any other value returns the current setting
     tmp := _sh_POWERSAVE
     case ||enabled
         0, 1:
@@ -563,7 +608,9 @@ PUB PrechargeSpeed(seg_a, seg_b, seg_c) | tmp[2]
     writeReg (TRANS_CMD, 6, @tmp)
 
 PUB ReverseCopy(enabled) | tmp
-
+' Set reverse/invert mode for the display's native Copy
+'   Valid values: TRUE (-1 or 1), FALSE (0)
+'   Any other value returns the current setting
     tmp := _sh_FILL
     case ||enabled
         0, 1:
@@ -578,7 +625,9 @@ PUB ReverseCopy(enabled) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB StartLine(disp_line) | tmp
-
+' Set display start line
+'   Valid values: 0..63
+'   Any other value returns the current setting
     tmp := _sh_DISPSTARTLINE
     case disp_line
         0..63:
@@ -591,7 +640,11 @@ PUB StartLine(disp_line) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB SubpixelOrder(order) | tmp
-
+' Set subpixel color order
+'   Valid values:
+'       SUBPIX_RGB (0): Red-Green-Blue order
+'       SUBPIX_BGR (1): Blue-Green-Red order
+'   Any other value returns the current setting
     tmp := _sh_REMAPCOLOR
     case order
         SUBPIX_RGB, SUBPIX_BGR:
@@ -606,7 +659,9 @@ PUB SubpixelOrder(order) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB VCOMHDeselect(mV) | tmp
-
+' Set voltage for COM deselect level, in millivolts
+'   Valid values: 440, 520, 610, 710, 830
+'   Any other value returns the current setting
     tmp := _sh_VCOMH
     case mV := lookdown(mv: 440, 520, 610, 710, 830)
         1..5:
@@ -621,7 +676,9 @@ PUB VCOMHDeselect(mV) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB VertAltScan(enabled) | tmp
-
+' Alternate Left-Right, Right-Left scanning, every other display line
+'   Valid values: TRUE (-1 or 1), FALSE (0)
+'   Any other value returns the current setting
     tmp := _sh_REMAPCOLOR
     case ||enabled
         0, 1:
@@ -636,7 +693,9 @@ PUB VertAltScan(enabled) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB VertOffset(disp_line) | tmp
-
+' Set display vertical offset, in lines
+'   Valid values: 0..63
+'   Any other value returns the current setting
     tmp := _sh_DISPOFFSET
     case disp_line
         0..63:
@@ -649,7 +708,7 @@ PUB VertOffset(disp_line) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB Reset
-
+' Reset the display controller
     io.High(_RES)
     time.MSleep (1)
     io.Low(_RES)
