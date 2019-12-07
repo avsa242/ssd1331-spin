@@ -1,15 +1,15 @@
 {
     --------------------------------------------
-    Filename: display.oled.ssd1331.96x64.spin2
+    Filename: display.oled.ssd1331.spi.spin
     Author: Jesse Burt
     Description: Driver for Solomon Systech 96x64 RGB OLED
     Copyright (c) 2019
-    Started: Nov 8, 2019
-    Updated: Nov 9, 2019
+    Started: Apr 28, 2019
+    Updated: Dec 7, 2019
     See end of file for terms of use.
     --------------------------------------------
 }
-#include "lib.gfx.bitmap.spin2"
+#include "lib.gfx.bitmap.spin"
 
 CON
 
@@ -70,10 +70,15 @@ PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN): okay
                             _MOSI := DIN_PIN
                             _SCK := CLK_PIN
                             _CS := CS_PIN
-                            io.Output(_DC)
-'                            io.Low(_MOSI)
-                            io.High(_RES)
-                            io.High(_CS)
+'                            io.High(_DC)
+'                            io.Output(_DC)
+'                            io.Output(_RES)
+'                            io.High(_RES)
+'                            io.High(_CS)
+                            dira[_DC] := 1
+'                            outa[_DC] := 1
+                            dira[_RES] := 1
+'                            outa[_RES] := 1
                             Reset
                             return okay
     return FALSE
@@ -505,6 +510,8 @@ PUB Phase2Adj(clks) | tmp
 
 PUB PlotAccel(x, y, rgb) | tmp[2]
 
+    x := 0 #> x <# _disp_width-1
+    y := 0 #> y <# _disp_height-1
     tmp.byte[0] := core#SSD1331_CMD_SETCOLUMN
     tmp.byte[1] := x
     tmp.byte[2] := 95
@@ -514,7 +521,7 @@ PUB PlotAccel(x, y, rgb) | tmp[2]
     
     writeReg (TRANS_CMD, 6, @tmp)
 
-    time.USleep (3)
+    time.USleep (5)
 
     writeReg (TRANS_DATA, 2, @rgb)
 
@@ -662,11 +669,17 @@ PUB VertOffset(disp_line) | tmp
 
 PUB Reset
 
-    io.High(_RES)
-    time.MSleep (1)
-    io.Low(_RES)
-    time.MSleep (10)
-    io.High(_RES)
+'    io.High(_RES)
+'    time.MSleep (1)
+'    io.Low(_RES)
+'    time.MSleep (10)
+'    io.High(_RES)
+
+    outa[_RES] := 1
+    time.msleep(1)
+    outa[_RES] := 0
+    time.msleep(10)
+    outa[_RES] := 1
 
 PUB Update
 ' Send the draw buffer to the display
@@ -676,12 +689,14 @@ PUB WriteBuffer(buff_addr, buff_sz)
 ' Send an alternate buffer to the display
     writeReg(TRANS_DATA, buff_sz, buff_addr)
 
-PUB writeReg(trans_type, nr_bytes, buff_addr) | tmp
+PRI writeReg(trans_type, nr_bytes, buff_addr) | tmp
 
     case trans_type
         TRANS_DATA:
+'            io.High(_DC)
             outa[_DC] := 1
         TRANS_CMD:
+'            io.Low(_DC)
             outa[_DC] := 0
 
         OTHER:
