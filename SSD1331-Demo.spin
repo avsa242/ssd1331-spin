@@ -61,28 +61,7 @@ VAR
 PUB Main
 
     Setup
-    oled.ClockDiv(1)
-    oled.ClockFreq(980)
-    oled.AddrIncMode (oled#ADDR_HORIZ)
-    oled.MirrorH (FALSE)
-    oled.SubpixelOrder (oled#SUBPIX_RGB)
-    oled.VertAltScan (FALSE)
-    oled.MirrorV (FALSE)
-    oled.Interlaced (FALSE)
-    oled.ColorDepth (oled#COLOR_65K)
-    oled.ClearAll
-    oled.Fill(TRUE)
-
-    oled.AllPixelsOff
-    oled.Bitmap(@splash, 12224, 0)
-    oled.Update
-    oled.Contrast (0)
-    oled.DispInverted (FALSE)
-    Demo_FadeIn (1, 10)
-    time.Sleep (2)
-    Demo_FadeOut (1, 10)
-    oled.ClearAll
-    oled.Contrast (127)
+    SplashScreen
 
     Demo_MEMScroller ($0000, $FFFF)
     time.Sleep(2)
@@ -118,7 +97,7 @@ PUB Main
     time.Sleep (2)
     oled.ClearAll
 
-    Demo_BoxBitmap(500)
+    Demo_BoxBitmap(250)
     time.Sleep (2)
     oled.ClearAll
 
@@ -132,6 +111,19 @@ PUB Main
 
     Stop
     FlashLED (LED, 100)
+
+PUB SplashScreen
+
+    oled.AllPixelsOff
+    oled.Bitmap(@splash, 12224, 0)
+    oled.Update
+    oled.Contrast (0)
+    oled.DispInverted (FALSE)
+    Demo_FadeIn (1, 10)
+    time.Sleep (2)
+    Demo_FadeOut (1, 10)
+    oled.ClearAll
+    oled.Contrast (127)
 
 PUB Demo_Sine(reps) | r, x, y, modifier, offset, div
 ' Draw a sine wave the length of the screen, influenced by
@@ -393,6 +385,18 @@ PUB Setup
         ser.Str(string("SSD1331 driver started "))
         oled.Address(@_framebuff)
         oled.Defaults
+        oled.ClockDiv(1)
+        oled.ClockFreq(980)
+        oled.AddrIncMode (oled#ADDR_HORIZ)
+        oled.MirrorH (FALSE)
+        oled.SubpixelOrder (oled#SUBPIX_RGB)
+        oled.VertAltScan (FALSE)
+        oled.MirrorV (FALSE)
+        oled.Interlaced (FALSE)
+        oled.ColorDepth (oled#COLOR_65K)
+        oled.ClearAll
+        oled.Fill(TRUE)
+
     else
         ser.Str(string("SSD1331 driver failed to start - halting"))
         Stop
