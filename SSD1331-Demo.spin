@@ -5,7 +5,7 @@
     Description: Simple demo for the SSD1331 driver
     Copyright (c) 2019
     Started Nov 3, 2019
-    Updated Dec 7, 2019
+    Updated Dec 8, 2019
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -45,6 +45,7 @@ OBJ
     io      : "io"
     oled    : "display.oled.ssd1331.spi.spin"
     int     : "string.integer"
+    fnt     : "font.5x8"
 
 VAR
 
@@ -61,7 +62,10 @@ VAR
 PUB Main
 
     Setup
-    SplashScreen
+'    SplashScreen
+
+    Demo_Text(1024)
+    time.Sleep(2)
 
     Demo_MEMScroller ($0000, $FFFF)
     time.Sleep(2)
@@ -115,7 +119,7 @@ PUB Main
 PUB SplashScreen
 
     oled.AllPixelsOff
-    oled.Bitmap(@splash, 12224, 0)
+'    oled.Bitmap(@splash, 12224, 0)
     oled.Update
     oled.Contrast (0)
     oled.DispInverted (FALSE)
@@ -125,10 +129,32 @@ PUB SplashScreen
     oled.ClearAll
     oled.Contrast (127)
 
+PUB Demo_Text(reps) | r, fg, bg, ch, col, row
+' Draw text with random foreground and background colors
+    ser.Str(string("Demo_Text", ser#NL, ser#LF))
+    ch := col := row := 0
+    fg := cnt   ' Seed the color variables
+    bg := cnt
+    repeat r from 1 to reps
+        oled.FGColor(?fg)
+        oled.BGColor(?bg)
+        oled.Position(col, row)
+        oled.Char(ch)
+        ch++
+        if ch > fnt#LASTCHAR
+            ch := 0
+        col++
+        if col > 15
+            col := 0
+            row++
+        if row > 7
+            row := 0
+        oled.Update
+
 PUB Demo_Sine(reps) | r, x, y, modifier, offset, div
 ' Draw a sine wave the length of the screen, influenced by
 '  the system counter
-    ser.Str(string("Demo_Sine", ser#NL))
+    ser.Str(string("Demo_Sine", ser#NL, ser#LF))
     div := 2048
     offset := YMAX/2                                    ' Offset for Y axis
     _bench_type := BT_FRAME
@@ -144,16 +170,16 @@ PUB Demo_Sine(reps) | r, x, y, modifier, offset, div
 
 PUB Demo_Bitmap(reps)
 ' Draw bitmap
-    ser.Str(string("Demo_Bitmap", ser#NL))
+    ser.Str(string("Demo_Bitmap", ser#NL, ser#LF))
     _bench_type := BT_FRAME
     repeat reps
-        oled.Bitmap (@splash, BUFFSZ, 0)
+        oled.Bitmap (0, BUFFSZ, 0)
         oled.Update
         _bench_iter++
 
 PUB Demo_BoxAccel(reps) | sx, sy, ex, ey, c
 ' Draw random filled boxes using the display's accelerated method
-    ser.Str(string("Demo_BoxAccel", ser#NL))
+    ser.Str(string("Demo_BoxAccel", ser#NL, ser#LF))
     _bench_type := BT_UNIT
     repeat reps
         sx := RND (95)
@@ -166,7 +192,7 @@ PUB Demo_BoxAccel(reps) | sx, sy, ex, ey, c
 
 PUB Demo_BoxBitmap(reps) | sx, sy, ex, ey, c
 ' Draw random filled boxes using the bitmap library's method
-    ser.Str(string("Demo_BoxBitmap", ser#NL))
+    ser.Str(string("Demo_BoxBitmap", ser#NL, ser#LF))
     _bench_type := BT_UNIT
     repeat reps
         sx := RND (95)
@@ -180,7 +206,7 @@ PUB Demo_BoxBitmap(reps) | sx, sy, ex, ey, c
 
 PUB Demo_Circle(reps) | r, x, y, c
 '' Draws random circles
-    ser.Str(string("Demo_Circle", ser#NL))
+    ser.Str(string("Demo_Circle", ser#NL, ser#LF))
     _rndseed := cnt
     _bench_type := BT_FRAME
     repeat reps
@@ -194,21 +220,21 @@ PUB Demo_Circle(reps) | r, x, y, c
 
 PUB Demo_FadeIn(reps, delay) | c
 ' Fade out display
-    ser.Str(string("Demo_FadeIn", ser#NL))
+    ser.Str(string("Demo_FadeIn", ser#NL, ser#LF))
     repeat c from 0 to 127
         oled.Contrast (c)
         time.MSleep (delay)
 
 PUB Demo_FadeOut(reps, delay) | c
 ' Fade out display
-    ser.Str(string("Demo_FadeOut", ser#NL))
+    ser.Str(string("Demo_FadeOut", ser#NL, ser#LF))
     repeat c from 127 to 0
         oled.Contrast (c)
         time.MSleep (delay)
 
 PUB Demo_HLineSpectrumAccel(reps) | x, c
 ' Plot spectrum from GetColor using full-height vertical lines, using the display's accelerated method
-    ser.Str(string("Demo_HLineSpectrumAccel", ser#NL))
+    ser.Str(string("Demo_HLineSpectrumAccel", ser#NL, ser#LF))
     _bench_type := BT_UNIT
     repeat reps
         repeat x from 0 to 95
@@ -218,7 +244,7 @@ PUB Demo_HLineSpectrumAccel(reps) | x, c
 
 PUB Demo_LineAccel(reps) | sx, sy, ex, ey, c
 ' Draw random lines, using the display's accelerated method
-    ser.Str(string("Demo_LineAccel", ser#NL))
+    ser.Str(string("Demo_LineAccel", ser#NL, ser#LF))
     _bench_type := BT_UNIT
     repeat reps
         sx := RND (95)
@@ -231,7 +257,7 @@ PUB Demo_LineAccel(reps) | sx, sy, ex, ey, c
 
 PUB Demo_LineBitmap(reps) | sx, sy, ex, ey, c
 ' Draw random lines, using the bitmap library's method
-    ser.Str(string("Demo_LineBitmap", ser#NL))
+    ser.Str(string("Demo_LineBitmap", ser#NL, ser#LF))
     _bench_type := BT_UNIT
     repeat reps
         sx := RND (95)
@@ -245,7 +271,7 @@ PUB Demo_LineBitmap(reps) | sx, sy, ex, ey, c
 
 PUB Demo_MEMScroller(start_addr, end_addr) | pos, st, en
 ' Dump Propeller Hub RAM (or ROM) to the framebuffer
-    ser.Str(string("Demo_MEMScroller", ser#NL))
+    ser.Str(string("Demo_MEMScroller", ser#NL, ser#LF))
     _bench_type := BT_FRAME
     repeat pos from start_addr to end_addr-BUFFSZ step BPL
         wordmove(@_framebuff, pos, BUFFSZ/2)
@@ -254,7 +280,7 @@ PUB Demo_MEMScroller(start_addr, end_addr) | pos, st, en
 
 PUB Demo_PlotAccel(reps) | x, y, c
 ' Draw random pixels, using the display's accelerated method
-    ser.Str(string("Demo_PlotAccel", ser#NL))
+    ser.Str(string("Demo_PlotAccel", ser#NL, ser#LF))
     _bench_type := BT_UNIT
     repeat reps
         x := RND (95)
@@ -266,7 +292,7 @@ PUB Demo_PlotAccel(reps) | x, y, c
 
 PUB Demo_PlotBitmap(reps) | x, y, c
 ' Draw random pixels, using the bitmap library's method
-    ser.Str(string("Demo_PlotBitmap", ser#NL))
+    ser.Str(string("Demo_PlotBitmap", ser#NL, ser#LF))
     _bench_type := BT_UNIT
     repeat reps
         x := RND (95)
@@ -379,11 +405,14 @@ PUB SetColorScale
 PUB Setup
 
     repeat until _ser_cog := ser.StartRXTX (SER_RX, SER_TX, 0, SER_BAUD)
+    time.MSleep(100)
     ser.Clear
-    ser.Str(string("Serial terminal started"))
+    ser.Str(string("Serial terminal started", ser#NL, ser#LF))
     if _oled_cog := oled.Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN)
-        ser.Str(string("SSD1331 driver started "))
+        ser.Str(string("SSD1331 driver started", ser#NL, ser#LF))
         oled.Address(@_framebuff)
+        oled.FontAddress(fnt.BaseAddr)
+        oled.FontSize(6, 8)
         oled.Defaults
         oled.ClockDiv(1)
         oled.ClockFreq(980)
@@ -401,7 +430,7 @@ PUB Setup
         ser.Str(string("SSD1331 driver failed to start - halting"))
         Stop
     SetColorScale
-    SwapBMBytes
+'    SwapBMBytes
 '    _bench_cog := cognew(fps, @_bench_iter_stack)
 
 PUB Stop
@@ -413,7 +442,7 @@ PUB Stop
     time.MSleep (5)
     ser.Stop
 
-PRI SwapBMBytes| i, tmp
+{PRI SwapBMBytes| i, tmp
 ' Reverse the byte order of the bitmap at address 'splash'
 ' This is required specifically for the Propeller Beanie logo splash bitmap,
 '   not required in general.
@@ -423,10 +452,10 @@ PRI SwapBMBytes| i, tmp
         tmp.byte[1] := byte[@splash][i]
         byte[@splash][i] := tmp.byte[0]
         byte[@splash][i+1] := tmp.byte[1]
-
+}
 
 DAT
-
+{
 splash  byte $00, $00, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
         byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $BE, $FF, $5C, $FF, $5C, $FF, $7D, $FF
         byte $7D, $FF, $7C, $FF, $9D, $FF, $BE, $FF, $BF, $F7, $FF, $FF, $FF, $FF, $FF, $FF
@@ -827,7 +856,7 @@ splash  byte $00, $00, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF
         byte $4C, $73, $4D, $73, $4C, $73, $CE, $7B, $CF, $7B, $CF, $7B, $51, $8C, $71, $8C, $B2, $94, $55, $AD, $96, $B5, $38, $C6, $18, $C6, $BA, $D6, $5D, $EF, $BE, $F7 
         byte $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF 
         byte $FF, $FF, $FF, $FF, $FF, $FF  
-
+}
 DAT
 {
     --------------------------------------------------------------------------------------------------------
