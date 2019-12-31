@@ -2,10 +2,10 @@
     --------------------------------------------
     Filename: display.oled.ssd1331.spi.spin
     Author: Jesse Burt
-    Description: Driver for Solomon Systech 96x64 RGB OLED
+    Description: Driver for Solomon Systech SSD1331 RGB OLED displays
     Copyright (c) 2019
     Started: Apr 28, 2019
-    Updated: Dec 7, 2019
+    Updated: Dec 8, 2019
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -59,11 +59,11 @@ VAR
 
 PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN): okay
 
-    if lookdown(CS_PIN: 0..63)
-        if lookdown(DC_PIN: 0..63)
-            if lookdown(DIN_PIN: 0..63)
-                if lookdown(CLK_PIN: 0..63)
-                    if lookdown(RES_PIN: 0..63)
+    if lookdown(CS_PIN: 0..31)
+        if lookdown(DC_PIN: 0..31)
+            if lookdown(DIN_PIN: 0..31)
+                if lookdown(CLK_PIN: 0..31)
+                    if lookdown(RES_PIN: 0..31)
                         if okay := spi.start (CS_PIN, CLK_PIN, DIN_PIN, -1)
                             _DC := DC_PIN
                             _RES := RES_PIN
