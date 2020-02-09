@@ -13,9 +13,8 @@
 CON
 
     CPOL                                = 0
-    MOSI_BITORDER                       = 5     ' MSBFIRST
-    SCK_MAX_FREQ                        = 30_000_000    ' Don't actually know...just put something for now
     MOSI_BITORDER                       = 5             ' MSBFIRST
+    SCK_MAX_FREQ                        = 30_000_000    ' Don't actually know...just put something for now
 
 ' Register map
     SSD1331_CMD_DRAWLINE                = $21
