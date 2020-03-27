@@ -108,7 +108,7 @@ PUB Defaults
     ClockDiv (1)
     PrechargeSpeed (127, 127, 127)
     PrechargeLevel (500)
-    VCOMHDeselect (830)
+    COMHighLogicLevel (830)
     CurrentLimit (16)
     ContrastA (127)
     ContrastB (127)
@@ -218,6 +218,21 @@ PUB ColorDepth(format) | tmp
     tmp.byte[0] := core#SSD1331_CMD_SETREMAP
     tmp.byte[1] := _sh_REMAPCOLOR
 
+    writeReg (TRANS_CMD, 2, @tmp)
+
+PUB COMHighLogicLevel(mV) | tmp
+
+    tmp := _sh_VCOMH
+    case mV := lookdown(mv: 440, 520, 610, 710, 830)
+        1..5:
+            mV := lookup(mV: $00, $10, $20, $30, $3E)
+        OTHER:
+            result := lookdown(tmp: $00, $10, $20, $30, $3E)
+            return lookup(result: 440, 520, 610, 710, 830)
+
+    _sh_VCOMH := mV
+    tmp.byte[0] := core#SSD1331_CMD_VCOMH
+    tmp.byte[1] := mV
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB Contrast(level)
@@ -606,21 +621,6 @@ PUB SubpixelOrder(order) | tmp
     _sh_REMAPCOLOR := (_sh_REMAPCOLOR | order) & core#SSD1331_CMD_SETREMAP_MASK
     tmp.byte[0] := core#SSD1331_CMD_SETREMAP
     tmp.byte[1] := _sh_REMAPCOLOR
-    writeReg (TRANS_CMD, 2, @tmp)
-
-PUB VCOMHDeselect(mV) | tmp
-
-    tmp := _sh_VCOMH
-    case mV := lookdown(mv: 440, 520, 610, 710, 830)
-        1..5:
-            mV := lookup(mV: $00, $10, $20, $30, $3E)
-        OTHER:
-            result := lookdown(tmp: $00, $10, $20, $30, $3E)
-            return lookup(result: 440, 520, 610, 710, 830)
-
-    _sh_VCOMH := mV
-    tmp.byte[0] := core#SSD1331_CMD_VCOMH
-    tmp.byte[1] := mV
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB VertAltScan(enabled) | tmp
