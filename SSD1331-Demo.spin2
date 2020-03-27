@@ -526,7 +526,7 @@ PUB Setup
         oled.Defaults
         oled.ClockDiv(1)
         oled.ClockFreq(980)
-        oled.AddrIncMode (oled#ADDR_HORIZ)
+        oled.AddrMode (oled#ADDR_HORIZ)
         oled.MirrorH (FALSE)
         oled.SubpixelOrder (oled#SUBPIX_RGB)
         oled.VertAltScan (FALSE)
