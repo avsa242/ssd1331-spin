@@ -62,23 +62,25 @@ VAR
     byte _sh_PHASE12PER, _sh_CLK, _sh_GRAYTABLE, _sh_PRECHGLEV, _sh_VCOMH, _sh_CMDLOCK
     byte _sh_HVSCROLL, _sh_FILL
 
-PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN): okay
+PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN, CLK_HZ=5_000_000): okay
 
     if lookdown(CS_PIN: 0..63)
         if lookdown(DC_PIN: 0..63)
             if lookdown(DIN_PIN: 0..63)
                 if lookdown(CLK_PIN: 0..63)
                     if lookdown(RES_PIN: 0..63)
-                        if okay := spi.start (DIN_PIN, -1, CLK_PIN, 6_000_000, core#CPOL)
+                        if okay := spi.start (DIN_PIN, -1, CLK_PIN, CLK_HZ, core#CPOL)
                             _DC := DC_PIN
                             _RES := RES_PIN
                             _MOSI := DIN_PIN
                             _SCK := CLK_PIN
                             _CS := CS_PIN
+                            io.High(_DC)
                             io.Output(_DC)
-'                            io.Low(_MOSI)
                             io.High(_RES)
+                            io.Output(_RES)
                             io.High(_CS)
+                            io.Output(_CS)
                             Reset
                             return okay
     return FALSE
