@@ -526,9 +526,9 @@ PUB Setup
         oled.Defaults
         oled.ClockDiv(1)
         oled.ClockFreq(980)
-        oled.AddrMode (oled#ADDR_HORIZ)
+        oled.AddrMode (oled#HORIZ)
         oled.MirrorH (FALSE)
-        oled.SubpixelOrder (oled#SUBPIX_RGB)
+        oled.SubpixelOrder (oled#RGB)
         oled.VertAltScan (FALSE)
         oled.MirrorV (TRUE)
         oled.Interlaced (FALSE)
@@ -544,7 +544,7 @@ PUB Setup
 
 PUB Stop
 
-    oled.Powered (oled#DISP_OFF)
+    oled.Powered (FALSE)
     oled.Stop
     cogstop(_timer_cog)
 

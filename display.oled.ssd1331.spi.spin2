@@ -27,10 +27,16 @@ CON
     TRANS_CMD   = 0
     TRANS_DATA  = 1
 
-' Display on/off modes
-    DISP_OFF    = 0
-    DISP_ON     = 1
-    DISP_ON_DIM = 2
+' Display power modes
+    OFF         = 0
+    ON          = 1
+    DIM         = 2
+
+' Display visibility modes
+    NORMAL      = 0
+    ALL_ON      = 1
+    ALL_OFF     = 2
+    INVERTED    = 3
 
 ' Color depth formats
     COLOR_256   = %00
@@ -38,12 +44,12 @@ CON
     COLOR_65K2  = %10
 
 ' Address increment mode
-    ADDR_HORIZ  = 0
-    ADDR_VERT   = 1
+    HORIZ       = 0
+    VERT        = 1
 
 ' Subpixel order
-    SUBPIX_RGB  = 0
-    SUBPIX_BGR  = 1
+    RGB         = 0
+    BGR         = 1
 
 OBJ
 
@@ -83,7 +89,7 @@ PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN, CLK_HZ=5_000_000): okay
 
 PUB Stop
 
-    AllPixelsOff
+    DisplayVisibility(ALL_OFF)
     Powered (FALSE)
 
 PUB Defaults
@@ -91,7 +97,7 @@ PUB Defaults
     ColorDepth (COLOR_65K)
     MirrorH (FALSE)
     Powered (FALSE)
-    AllPixelsOff
+    DisplayVisibility(ALL_OFF)
     DisplayStartLine (0)
     DisplayOffset (0)
     DisplayInverted (FALSE)
@@ -109,9 +115,10 @@ PUB Defaults
     ContrastA (127)
     ContrastB (127)
     ContrastC (127)
-    Powered (DISP_ON)
+    Powered (TRUE)
     DisplayBounds (0, 0, 95, 63)
     ClearAccel
+    DisplayVisibility(NORMAL)
 
 PUB Address(addr)
 ' Set framebuffer/display buffer address
@@ -121,7 +128,7 @@ PUB AddrMode(mode) | tmp
 ' Set display internal addressing mode
     tmp := _sh_REMAPCOLOR
     case mode
-        ADDR_HORIZ, ADDR_VERT:
+        HORIZ, VERT:
         OTHER:
             return (tmp >> core#FLD_ADDRINC) & %1
 
@@ -130,18 +137,6 @@ PUB AddrMode(mode) | tmp
     tmp.byte[0] := core#SSD1331_CMD_SETREMAP
     tmp.byte[1] := _sh_REMAPCOLOR
     writeReg (TRANS_CMD, 2, @tmp)
-
-PUB AllPixelsOn | tmp
-
-    _sh_DISPMODE := core#SSD1331_CMD_DISPLAYALLON
-    tmp := _sh_DISPMODE
-    writeReg (TRANS_CMD, 1, @tmp)
-
-PUB AllPixelsOff | tmp
-
-    _sh_DISPMODE := core#SSD1331_CMD_DISPLAYALLOFF
-    tmp := _sh_DISPMODE
-    writeReg (TRANS_CMD, 1, @tmp)
 
 PUB BoxAccel(sx, sy, ex, ey, boxcolor, fillcolor) | tmp[3]
 ' Draw a box, using the display's native/accelerated box function
@@ -369,17 +364,13 @@ PUB DisplayBounds(sx, sy, ex, ey) | tmp[2]
 
 PUB DisplayInverted(enabled) | tmp
 ' Invert display colors
-    tmp := _sh_DISPMODE
     case ||enabled
-        0, 1:
-            enabled := lookupz(||enabled: core#SSD1331_CMD_NORMALDISPLAY, core#SSD1331_CMD_INVERTDISPLAY)
+        0:
+            DisplayVisibility(NORMAL)
+        1:
+            DisplayVisibility(INVERTED)
         OTHER:
-            result := lookdownz(tmp: core#SSD1331_CMD_NORMALDISPLAY, core#SSD1331_CMD_INVERTDISPLAY)
-            return (result & %1) * TRUE
-
-    _sh_DISPMODE := enabled
-    tmp := _sh_DISPMODE
-    writeReg (TRANS_CMD, 1, @tmp)
+            return FALSE
 
 PUB DisplayLines(lines) | tmp
 ' Set total number of display lines
@@ -420,6 +411,18 @@ PUB DisplayStartLine(disp_line) | tmp
     tmp.byte[0] := core#SSD1331_CMD_STARTLINE
     tmp.byte[1] := disp_line
     writeReg (TRANS_CMD, 2, @tmp)
+
+PUB DisplayVisibility(mode) | tmp
+' Set display visibility
+    tmp := _sh_DISPMODE
+    case mode
+        NORMAL, ALL_ON, ALL_OFF, INVERTED:
+            mode := mode + core#SSD1331_CMD_NORMALDISPLAY
+        OTHER:
+            return (_sh_DISPMODE - core#SSD1331_CMD_NORMALDISPLAY)
+
+    _sh_DISPMODE := mode
+    writeReg (TRANS_CMD, 1, @tmp)
 
 PUB ExtSupply | tmp
 
@@ -557,7 +560,7 @@ PUB Powered(enabled) | tmp
 ' Enable display power
     tmp := _sh_DISPONOFF
     case ||enabled
-        DISP_OFF, DISP_ON, DISP_ON_DIM:
+        OFF, ON, DIM:
             enabled := lookupz(enabled: core#SSD1331_CMD_DISPLAYOFF, core#SSD1331_CMD_DISPLAYON, core#SSD1331_CMD_DISPLAYONDIM)
         OTHER:
             return lookdownz(tmp: core#SSD1331_CMD_DISPLAYOFF, core#SSD1331_CMD_DISPLAYON, core#SSD1331_CMD_DISPLAYONDIM)
@@ -633,7 +636,7 @@ PUB SubpixelOrder(order) | tmp
 ' Set subpixel color order
     tmp := _sh_REMAPCOLOR
     case order
-        SUBPIX_RGB, SUBPIX_BGR:
+        RGB, BGR:
             order <<= core#FLD_SUBPIX_ORDER
         OTHER:
             return (tmp >> core#FLD_SUBPIX_ORDER) & %1
