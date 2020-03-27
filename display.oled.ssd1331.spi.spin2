@@ -87,13 +87,13 @@ PUB Stop
     Powered (FALSE)
 
 PUB Defaults
-
+' Apply power-on-reset default settings
     ColorDepth (COLOR_65K)
     MirrorH (FALSE)
     Powered (FALSE)
     AllPixelsOff
     DisplayStartLine (0)
-    VertOffset (0)
+    DisplayOffset (0)
     DisplayInverted (FALSE)
     DisplayLines (64)
     ExtSupply
@@ -143,7 +143,7 @@ PUB AllPixelsOff | tmp
     tmp := _sh_DISPMODE
     writeReg (TRANS_CMD, 1, @tmp)
 
-PUB BoxAccel(sx, sy, ex, ey, box_rgb, fill_rgb) | tmp[3]
+PUB BoxAccel(sx, sy, ex, ey, boxcolor, fillcolor) | tmp[3]
 ' Draw a box, using the display's native/accelerated box function
     sx := 0 #> sx <# _disp_width-1
     sy := 0 #> sy <# _disp_height-1
@@ -155,12 +155,12 @@ PUB BoxAccel(sx, sy, ex, ey, box_rgb, fill_rgb) | tmp[3]
     tmp.byte[2] := sy
     tmp.byte[3] := ex
     tmp.byte[4] := ey
-    tmp.byte[5] := RGB565_R8 (box_rgb)
-    tmp.byte[6] := RGB565_G8 (box_rgb)
-    tmp.byte[7] := RGB565_B8 (box_rgb)
-    tmp.byte[8] := RGB565_R8 (fill_rgb)
-    tmp.byte[9] := RGB565_G8 (fill_rgb)
-    tmp.byte[10] := RGB565_B8 (fill_rgb)
+    tmp.byte[5] := RGB565_R8 (boxcolor)
+    tmp.byte[6] := RGB565_G8 (boxcolor)
+    tmp.byte[7] := RGB565_B8 (boxcolor)
+    tmp.byte[8] := RGB565_R8 (fillcolor)
+    tmp.byte[9] := RGB565_G8 (fillcolor)
+    tmp.byte[10] := RGB565_B8 (fillcolor)
     writeReg (TRANS_CMD, 11, @tmp)
 
 PUB ClearAccel | tmp[2]
@@ -174,7 +174,7 @@ PUB ClearAccel | tmp[2]
     writeReg (TRANS_CMD, 6, @tmp)
 
 PUB ClockDiv(divider) | tmp
-
+' Set clock frequency divider used by the display controller
     tmp := _sh_CLK
     case divider
         1..16:
@@ -189,7 +189,7 @@ PUB ClockDiv(divider) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB ClockFreq(freq) | tmp
-
+' Set display internal oscillator frequency
     tmp := _sh_CLK
     case freq
         0..15:
@@ -204,7 +204,7 @@ PUB ClockFreq(freq) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB ColorDepth(format) | tmp
-
+' Set expected color format of pixel data
     tmp := _sh_REMAPCOLOR
     case format
         COLOR_256, COLOR_65K, COLOR_65K2:
@@ -221,7 +221,7 @@ PUB ColorDepth(format) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB COMHighLogicLevel(mV) | tmp
-
+' Set logic high level threshold of COM pins rel. to Vcc
     tmp := _sh_VCOMH
     case mV := lookdown(mv: 440, 520, 610, 710, 830)
         1..5:
@@ -236,13 +236,13 @@ PUB COMHighLogicLevel(mV) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB Contrast(level)
-
+' Set display contrast/brightness
     ContrastA (level)
     ContrastB (level)
     ContrastC (level)
 
 PUB ContrastA(level) | tmp
-
+' Set contrast/brightness level of subpixel a
     tmp := _sh_SETCONTRAST_A
     case level
         0..255:
@@ -255,7 +255,7 @@ PUB ContrastA(level) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB ContrastB(level) | tmp
-
+' Set contrast/brightness level of subpixel b
     tmp := _sh_SETCONTRAST_B
     case level
         0..255:
@@ -268,7 +268,7 @@ PUB ContrastB(level) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB ContrastC(level) | tmp
-
+' Set contrast/brightness level of subpixel c
     tmp := _sh_SETCONTRAST_C
     case level
         0..255:
@@ -281,7 +281,7 @@ PUB ContrastC(level) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB CopyAccel(sx, sy, ex, ey, dx, dy) | tmp[2]
-
+' Use the display's accelerated Copy Region function
     case sx
         0..95:
         OTHER:
@@ -322,7 +322,7 @@ PUB CopyAccel(sx, sy, ex, ey, dx, dy) | tmp[2]
     writeReg (TRANS_CMD, 7, @tmp)
 
 PUB CopyAccelInverted(enabled) | tmp
-
+' Enable inverted colors, when using CopyAccel()
     tmp := _sh_FILL
     case ||enabled
         0, 1:
@@ -337,7 +337,7 @@ PUB CopyAccelInverted(enabled) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB CurrentLimit(divisor) | tmp
-
+' Set master current limit divisor
     tmp := _sh_MASTERCCTRL
     case divisor
         1..16:
@@ -351,7 +351,7 @@ PUB CurrentLimit(divisor) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB DisplayBounds(sx, sy, ex, ey) | tmp[2]
-
+' Set displayable area
     ifnot lookup(sx: 0..95) or lookup(sy: 0..63) or lookup(ex: 0..95) or lookup(ey: 0..63)
         return
 
@@ -368,7 +368,7 @@ PUB DisplayBounds(sx, sy, ex, ey) | tmp[2]
     writeReg (TRANS_CMD, 3, @tmp)
 
 PUB DisplayInverted(enabled) | tmp
-
+' Invert display colors
     tmp := _sh_DISPMODE
     case ||enabled
         0, 1:
@@ -382,7 +382,7 @@ PUB DisplayInverted(enabled) | tmp
     writeReg (TRANS_CMD, 1, @tmp)
 
 PUB DisplayLines(lines) | tmp
-
+' Set total number of display lines
     tmp := _sh_MULTIPLEX
     case lines
         16..64:
@@ -396,7 +396,7 @@ PUB DisplayLines(lines) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB DisplayOffset(lines) | tmp
-
+' Set display offset/vertical shift
     tmp := _sh_DISPOFFSET
     case lines
         0..63:
@@ -409,7 +409,7 @@ PUB DisplayOffset(lines) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB DisplayStartLine(disp_line) | tmp
-
+' Set display start line
     tmp := _sh_DISPSTARTLINE
     case disp_line
         0..63:
@@ -428,7 +428,7 @@ PUB ExtSupply | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB FillAccelEnabled(enabled) | tmp
-
+' Enable the display's fill function, when using BoxAccel()
     tmp := _sh_FILL
     case ||enabled
         0, 1:
@@ -443,7 +443,7 @@ PUB FillAccelEnabled(enabled) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB Interlaced(enabled) | tmp
-
+' Alternate every other display line
     tmp := _sh_REMAPCOLOR
     case ||enabled
         0, 1:
@@ -458,7 +458,7 @@ PUB Interlaced(enabled) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB LineAccel(sx, sy, ex, ey, rgb) | tmp[2]
-' Draws a line, using the display's native/accelerated line drawing primitive
+' Draw a line, using the display's native/accelerated line function
     sx := 0 #> sx <# _disp_width-1
     sy := 0 #> sy <# _disp_height-1
     ex := 0 #> ex <# _disp_width-1
@@ -475,7 +475,7 @@ PUB LineAccel(sx, sy, ex, ey, rgb) | tmp[2]
     writeReg (TRANS_CMD, 8, @tmp)
 
 PUB MirrorH(enabled) | tmp
-
+' Mirror display, horizontally
     tmp := _sh_REMAPCOLOR
     case ||enabled
         0, 1:
@@ -490,7 +490,7 @@ PUB MirrorH(enabled) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB MirrorV(enabled) | tmp
-
+' Mirror display, vertically
     tmp := _sh_REMAPCOLOR
     case ||enabled
         0, 1:
@@ -505,12 +505,12 @@ PUB MirrorV(enabled) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB NoOp | tmp
-
+' No-operation
     tmp := core#SSD1331_CMD_NOP3
     writeReg (TRANS_CMD, 1, @tmp)
 
 PUB Phase1Period(clks) | tmp
-
+' Set discharge/phase 1 period, in display clocks
     tmp := _sh_PHASE12PER
     case clks
         1..15:
@@ -524,7 +524,7 @@ PUB Phase1Period(clks) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB Phase2Period(clks) | tmp
-
+' Set charge/phase 2 period, in display clocks
     tmp := _sh_PHASE12PER
     case clks
         1..15:
@@ -539,7 +539,7 @@ PUB Phase2Period(clks) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB PlotAccel(x, y, rgb) | tmp[2]
-
+' Draw a pixel, using the display's native/accelerated plot/pixel function
     tmp.byte[0] := core#SSD1331_CMD_SETCOLUMN
     tmp.byte[1] := x
     tmp.byte[2] := 95
@@ -554,7 +554,7 @@ PUB PlotAccel(x, y, rgb) | tmp[2]
     writeReg (TRANS_DATA, 2, @rgb)
 
 PUB Powered(enabled) | tmp
-
+' Enable display power
     tmp := _sh_DISPONOFF
     case ||enabled
         DISP_OFF, DISP_ON, DISP_ON_DIM:
@@ -566,7 +566,7 @@ PUB Powered(enabled) | tmp
     writeReg (TRANS_CMD, 1, @_sh_DISPONOFF)
 
 PUB PowerSaving(enabled) | tmp
-
+' Enable display power saving mode
     tmp := _sh_POWERSAVE
     case ||enabled
         0, 1:
@@ -580,7 +580,7 @@ PUB PowerSaving(enabled) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB PrechargeLevel(mV) | tmp
-
+' Set first pre-charge voltage level (phase 2) of segment pins, in millivolts
     tmp := _sh_PRECHGLEV
     case mV := lookdown(mv: 100, 110, 130, 140, 150, 170, 180, 190, 200, 220, 230, 240, 260, 270, 280, 300, 310, 320, 330, 350, 360, 370, 390, 400, 410, 430, 440, 450, 460, 480, 490, 500)
         1..32:
@@ -622,7 +622,7 @@ PUB PrechargeSpeed(seg_a, seg_b, seg_c) | tmp[2]
     writeReg (TRANS_CMD, 6, @tmp)
 
 PUB SubpixelOrder(order) | tmp
-
+' Set subpixel color order
     tmp := _sh_REMAPCOLOR
     case order
         SUBPIX_RGB, SUBPIX_BGR:
@@ -652,7 +652,7 @@ PUB VertAltScan(enabled) | tmp
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB Reset
-
+' Reset the display controller
     io.High(_RES)
     time.MSleep (1)
     io.Low(_RES)
@@ -660,14 +660,14 @@ PUB Reset
     io.High(_RES)
 
 PUB Update
-
+' Write the current display buffer to the display
     writeReg(TRANS_DATA, _buff_sz, _draw_buffer)
 
 PUB WriteBuffer(buff_addr, buff_sz)
-
+' Write alternate buffer to display
     writeReg(TRANS_DATA, buff_sz, buff_addr)
 
-PUB writeReg(trans_type, nr_bytes, buff_addr) | tmp
+PRI writeReg(trans_type, nr_bytes, buff_addr) | tmp
 
     case trans_type
         TRANS_DATA:
@@ -684,20 +684,23 @@ PUB writeReg(trans_type, nr_bytes, buff_addr) | tmp
 '        spi.write (byte[buff_addr][tmp])
     io.High(_CS)
 
-{{
-┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                                   TERMS OF USE: MIT License                                                  │                                                            
-├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation    │ 
-│files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,    │
-│modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software│
-│is furnished to do so, subject to the following conditions:                                                                   │
-│                                                                                                                              │
-│The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.│
-│                                                                                                                              │
-│THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE          │
-│WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR         │
-│COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,   │
-│ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                         │
-└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-}}
+{
+    --------------------------------------------------------------------------------------------------------
+    TERMS OF USE: MIT License
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+    associated documentation files (the "Software"), to deal in the Software without restriction, including
+    without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the
+    following conditions:
+
+    The above copyright notice and this permission notice shall be included in all copies or substantial
+    portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+    LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+    --------------------------------------------------------------------------------------------------------
+}
