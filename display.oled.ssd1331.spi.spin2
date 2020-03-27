@@ -96,7 +96,7 @@ PUB Defaults
     MirrorH (FALSE)
     Powered (FALSE)
     AllPixelsOff
-    StartLine (0)
+    DisplayStartLine (0)
     VertOffset (0)
     DisplayInverted (FALSE)
     DisplayLines (64)
@@ -380,6 +380,19 @@ PUB DisplayLines(lines) | tmp
     tmp.byte[1] := lines
     writeReg (TRANS_CMD, 2, @tmp)
 
+PUB DisplayStartLine(disp_line) | tmp
+
+    tmp := _sh_DISPSTARTLINE
+    case disp_line
+        0..63:
+        OTHER:
+            return tmp
+
+    _sh_DISPSTARTLINE := disp_line
+    tmp.byte[0] := core#SSD1331_CMD_STARTLINE
+    tmp.byte[1] := disp_line
+    writeReg (TRANS_CMD, 2, @tmp)
+
 PUB ExtSupply | tmp
 
     tmp.byte[0] := core#SSD1331_CMD_SETMASTER
@@ -579,19 +592,6 @@ PUB PrechargeSpeed(seg_a, seg_b, seg_c) | tmp[2]
     tmp.byte[4] := core#SSD1331_CMD_PRECHARGEC
     tmp.byte[5] := seg_c
     writeReg (TRANS_CMD, 6, @tmp)
-
-PUB StartLine(disp_line) | tmp
-
-    tmp := _sh_DISPSTARTLINE
-    case disp_line
-        0..63:
-        OTHER:
-            return tmp
-
-    _sh_DISPSTARTLINE := disp_line
-    tmp.byte[0] := core#SSD1331_CMD_STARTLINE
-    tmp.byte[1] := disp_line
-    writeReg (TRANS_CMD, 2, @tmp)
 
 PUB SubpixelOrder(order) | tmp
 
