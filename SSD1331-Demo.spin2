@@ -544,7 +544,7 @@ PUB Setup
 
 PUB Stop
 
-    oled.DisplayEnabled (oled#DISP_OFF)
+    oled.Powered (oled#DISP_OFF)
     oled.Stop
     cogstop(_timer_cog)
 

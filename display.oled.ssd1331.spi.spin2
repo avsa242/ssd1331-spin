@@ -84,7 +84,7 @@ PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN, CLK_HZ=5_000_000): okay
 PUB Stop
 
     AllPixelsOff
-    DisplayEnabled (FALSE)
+    Powered (FALSE)
 
 PUB Address(addr)
 
@@ -94,7 +94,7 @@ PUB Defaults
 
     ColorDepth (COLOR_65K)
     MirrorH (FALSE)
-    DisplayEnabled (FALSE)
+    Powered (FALSE)
     AllPixelsOff
     StartLine (0)
     VertOffset (0)
@@ -113,7 +113,7 @@ PUB Defaults
     ContrastA (127)
     ContrastB (127)
     ContrastC (127)
-    DisplayEnabled (DISP_ON)
+    Powered (DISP_ON)
     DisplayBounds (0, 0, 95, 63)
     ClearAccel
 
@@ -337,18 +337,6 @@ PUB DisplayBounds(sx, sy, ex, ey) | tmp[2]
 
     writeReg (TRANS_CMD, 3, @tmp)
 
-PUB DisplayEnabled(enabled) | tmp
-
-    tmp := _sh_DISPONOFF
-    case ||enabled
-        DISP_OFF, DISP_ON, DISP_ON_DIM:
-            enabled := lookupz(enabled: core#SSD1331_CMD_DISPLAYOFF, core#SSD1331_CMD_DISPLAYON, core#SSD1331_CMD_DISPLAYONDIM)
-        OTHER:
-            return lookdownz(tmp: core#SSD1331_CMD_DISPLAYOFF, core#SSD1331_CMD_DISPLAYON, core#SSD1331_CMD_DISPLAYONDIM)
-
-    _sh_DISPONOFF := enabled
-    writeReg (TRANS_CMD, 1, @_sh_DISPONOFF)
-
 PUB DisplayLines(lines) | tmp
 
     tmp := _sh_MULTIPLEX
@@ -508,6 +496,18 @@ PUB PlotAccel(x, y, rgb) | tmp[2]
     time.USleep (3)
 
     writeReg (TRANS_DATA, 2, @rgb)
+
+PUB Powered(enabled) | tmp
+
+    tmp := _sh_DISPONOFF
+    case ||enabled
+        DISP_OFF, DISP_ON, DISP_ON_DIM:
+            enabled := lookupz(enabled: core#SSD1331_CMD_DISPLAYOFF, core#SSD1331_CMD_DISPLAYON, core#SSD1331_CMD_DISPLAYONDIM)
+        OTHER:
+            return lookdownz(tmp: core#SSD1331_CMD_DISPLAYOFF, core#SSD1331_CMD_DISPLAYON, core#SSD1331_CMD_DISPLAYONDIM)
+
+    _sh_DISPONOFF := enabled
+    writeReg (TRANS_CMD, 1, @_sh_DISPONOFF)
 
 PUB PowerSaving(enabled) | tmp
 
