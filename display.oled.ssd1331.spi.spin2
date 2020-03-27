@@ -337,6 +337,20 @@ PUB DisplayBounds(sx, sy, ex, ey) | tmp[2]
 
     writeReg (TRANS_CMD, 3, @tmp)
 
+PUB DisplayInverted(enabled) | tmp
+
+    tmp := _sh_DISPMODE
+    case ||enabled
+        0, 1:
+            enabled := lookupz(||enabled: core#SSD1331_CMD_NORMALDISPLAY, core#SSD1331_CMD_INVERTDISPLAY)
+        OTHER:
+            result := lookdownz(tmp: core#SSD1331_CMD_NORMALDISPLAY, core#SSD1331_CMD_INVERTDISPLAY)
+            return (result & %1) * TRUE
+
+    _sh_DISPMODE := enabled
+    tmp := _sh_DISPMODE
+    writeReg (TRANS_CMD, 1, @tmp)
+
 PUB DisplayLines(lines) | tmp
 
     tmp := _sh_MULTIPLEX
@@ -350,20 +364,6 @@ PUB DisplayLines(lines) | tmp
     tmp.byte[0] := core#SSD1331_CMD_SETMULTIPLEX
     tmp.byte[1] := lines
     writeReg (TRANS_CMD, 2, @tmp)
-
-PUB DispInverted(enabled) | tmp
-
-    tmp := _sh_DISPMODE
-    case ||enabled
-        0, 1:
-            enabled := lookupz(||enabled: core#SSD1331_CMD_NORMALDISPLAY, core#SSD1331_CMD_INVERTDISPLAY)
-        OTHER:
-            result := lookdownz(tmp: core#SSD1331_CMD_NORMALDISPLAY, core#SSD1331_CMD_INVERTDISPLAY)
-            return (result & %1) * TRUE
-
-    _sh_DISPMODE := enabled
-    tmp := _sh_DISPMODE
-    writeReg (TRANS_CMD, 1, @tmp)
 
 PUB ExtSupply | tmp
 
