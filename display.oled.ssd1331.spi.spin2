@@ -68,7 +68,7 @@ VAR
     byte _sh_PHASE12PER, _sh_CLK, _sh_GRAYTABLE, _sh_PRECHGLEV, _sh_VCOMH, _sh_CMDLOCK
     byte _sh_HVSCROLL, _sh_FILL
 
-PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN, CLK_HZ=5_000_000): okay
+PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN, CLK_HZ, drawbuffer_address): okay
 
     if lookdown(CS_PIN: 0..63) and lookdown(DC_PIN: 0..63) and lookdown(DIN_PIN: 0..63) and lookdown(CLK_PIN: 0..63) and lookdown(RES_PIN: 0..63)
         if okay := spi.start (DIN_PIN, -1, CLK_PIN, CLK_HZ, core#CPOL)
@@ -84,6 +84,7 @@ PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN, CLK_HZ=5_000_000): okay
             io.High(_CS)
             io.Output(_CS)
             Reset
+            Address (drawbuffer_address)
             return okay
     return FALSE
 
@@ -119,6 +120,20 @@ PUB Defaults
     DisplayBounds (0, 0, 95, 63)
     ClearAccel
     DisplayVisibility(NORMAL)
+
+PUB DefaultsCommon
+' Apply some more common default settings
+    Defaults                                                ' Start with POR settings
+    ClockDiv (1)
+    ClockFreq (980)
+    AddrMode (HORIZ)
+    MirrorH (FALSE)
+    SubpixelOrder (RGB)
+    VertAltScan (FALSE)
+    MirrorV (FALSE)
+    Interlaced (FALSE)
+    ColorDepth (COLOR_65K)
+    FillAccelEnabled (TRUE)
 
 PUB Address(addr)
 ' Set framebuffer/display buffer address

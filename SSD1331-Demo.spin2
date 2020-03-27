@@ -518,23 +518,12 @@ PUB Setup
     repeat until _ser_cog := ser.StartRXTX (SER_RX, SER_TX, 0, SER_BAUD)
     ser.Clear
     ser.printf("Serial terminal started\n")
-    if _oled_cog := oled.Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN, CLK_HZ)
+    if _oled_cog := oled.Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN, CLK_HZ, @_framebuff)
         ser.printf("SSD1331 driver started\n", _oled_cog)
-        oled.Address(@_framebuff)
         oled.FontAddress(fnt.BaseAddr)
         oled.FontSize(6, 8)
-        oled.Defaults
-        oled.ClockDiv(1)
-        oled.ClockFreq(980)
-        oled.AddrMode (oled#HORIZ)
-        oled.MirrorH (FALSE)
-        oled.SubpixelOrder (oled#RGB)
-        oled.VertAltScan (FALSE)
-        oled.MirrorV (TRUE)
-        oled.Interlaced (FALSE)
-        oled.ColorDepth (oled#COLOR_65K)
+        oled.DefaultsCommon
         oled.ClearAll
-        oled.FillAccelEnabled(TRUE)
     else
         ser.printf("SSD1331 driver failed to start - halting\n")
         Stop
