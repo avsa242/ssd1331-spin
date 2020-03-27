@@ -621,6 +621,14 @@ PUB PrechargeSpeed(seg_a, seg_b, seg_c) | tmp[2]
     tmp.byte[5] := seg_c
     writeReg (TRANS_CMD, 6, @tmp)
 
+PUB Reset
+' Reset the display controller
+    io.High(_RES)
+    time.MSleep (1)
+    io.Low(_RES)
+    time.MSleep (10)
+    io.High(_RES)
+
 PUB SubpixelOrder(order) | tmp
 ' Set subpixel color order
     tmp := _sh_REMAPCOLOR
@@ -636,6 +644,10 @@ PUB SubpixelOrder(order) | tmp
     tmp.byte[1] := _sh_REMAPCOLOR
     writeReg (TRANS_CMD, 2, @tmp)
 
+PUB Update
+' Write the current display buffer to the display
+    writeReg(TRANS_DATA, _buff_sz, _draw_buffer)
+
 PUB VertAltScan(enabled) | tmp
 
     tmp := _sh_REMAPCOLOR
@@ -650,18 +662,6 @@ PUB VertAltScan(enabled) | tmp
     tmp.byte[0] := core#SSD1331_CMD_SETREMAP
     tmp.byte[1] := _sh_REMAPCOLOR
     writeReg (TRANS_CMD, 2, @tmp)
-
-PUB Reset
-' Reset the display controller
-    io.High(_RES)
-    time.MSleep (1)
-    io.Low(_RES)
-    time.MSleep (10)
-    io.High(_RES)
-
-PUB Update
-' Write the current display buffer to the display
-    writeReg(TRANS_DATA, _buff_sz, _draw_buffer)
 
 PUB WriteBuffer(buff_addr, buff_sz)
 ' Write alternate buffer to display
