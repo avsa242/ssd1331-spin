@@ -86,10 +86,6 @@ PUB Stop
     AllPixelsOff
     Powered (FALSE)
 
-PUB Address(addr)
-
-    _draw_buffer := addr
-
 PUB Defaults
 
     ColorDepth (COLOR_65K)
@@ -116,6 +112,10 @@ PUB Defaults
     Powered (DISP_ON)
     DisplayBounds (0, 0, 95, 63)
     ClearAccel
+
+PUB Address(addr)
+' Set framebuffer/display buffer address
+    _draw_buffer := addr
 
 PUB AddrMode(mode) | tmp
 ' Set display internal addressing mode
