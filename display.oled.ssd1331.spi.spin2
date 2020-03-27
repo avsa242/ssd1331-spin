@@ -395,6 +395,19 @@ PUB DisplayLines(lines) | tmp
     tmp.byte[1] := lines
     writeReg (TRANS_CMD, 2, @tmp)
 
+PUB DisplayOffset(lines) | tmp
+
+    tmp := _sh_DISPOFFSET
+    case lines
+        0..63:
+        OTHER:
+            return tmp
+
+    _sh_DISPOFFSET := lines
+    tmp.byte[0] := core#SSD1331_CMD_DISPLAYOFFSET
+    tmp.byte[1] := lines
+    writeReg (TRANS_CMD, 2, @tmp)
+
 PUB DisplayStartLine(disp_line) | tmp
 
     tmp := _sh_DISPSTARTLINE
@@ -636,19 +649,6 @@ PUB VertAltScan(enabled) | tmp
     _sh_REMAPCOLOR := (_sh_REMAPCOLOR | enabled) & core#SSD1331_CMD_SETREMAP_MASK
     tmp.byte[0] := core#SSD1331_CMD_SETREMAP
     tmp.byte[1] := _sh_REMAPCOLOR
-    writeReg (TRANS_CMD, 2, @tmp)
-
-PUB VertOffset(disp_line) | tmp
-
-    tmp := _sh_DISPOFFSET
-    case disp_line
-        0..63:
-        OTHER:
-            return tmp
-
-    _sh_DISPOFFSET := disp_line
-    tmp.byte[0] := core#SSD1331_CMD_DISPLAYOFFSET
-    tmp.byte[1] := disp_line
     writeReg (TRANS_CMD, 2, @tmp)
 
 PUB Reset
