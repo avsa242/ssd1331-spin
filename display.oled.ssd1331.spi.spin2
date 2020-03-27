@@ -98,12 +98,12 @@ PUB Defaults
     AllPixelsOff
     StartLine (0)
     VertOffset (0)
-    DispInverted (FALSE)
+    DisplayInverted (FALSE)
     DisplayLines (64)
     ExtSupply
     PowerSaving (TRUE)
-    Phase1Adj (7)
-    Phase2Adj (4)
+    Phase1Period (7)
+    Phase2Period (4)
     ClockFreq ($D)
     ClockDiv (1)
     PrechargeSpeed (127, 127, 127)
@@ -371,7 +371,7 @@ PUB ExtSupply | tmp
     tmp.byte[1] := core#MASTERCFG_EXT_VCC
     writeReg (TRANS_CMD, 2, @tmp)
 
-PUB Fill(enabled) | tmp
+PUB FillAccelEnabled(enabled) | tmp
 
     tmp := _sh_FILL
     case ||enabled
@@ -453,7 +453,7 @@ PUB NoOp | tmp
     tmp := core#SSD1331_CMD_NOP3
     writeReg (TRANS_CMD, 1, @tmp)
 
-PUB Phase1Adj(clks) | tmp
+PUB Phase1Period(clks) | tmp
 
     tmp := _sh_PHASE12PER
     case clks
@@ -467,7 +467,7 @@ PUB Phase1Adj(clks) | tmp
     tmp.byte[1] := _sh_PHASE12PER
     writeReg (TRANS_CMD, 2, @tmp)
 
-PUB Phase2Adj(clks) | tmp
+PUB Phase2Period(clks) | tmp
 
     tmp := _sh_PHASE12PER
     case clks

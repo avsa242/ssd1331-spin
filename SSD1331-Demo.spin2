@@ -534,7 +534,7 @@ PUB Setup
         oled.Interlaced (FALSE)
         oled.ColorDepth (oled#COLOR_65K)
         oled.ClearAll
-        oled.Fill(TRUE)
+        oled.FillAccelEnabled(TRUE)
     else
         ser.printf("SSD1331 driver failed to start - halting\n")
         Stop
