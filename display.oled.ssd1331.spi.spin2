@@ -64,25 +64,21 @@ VAR
 
 PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN, CLK_HZ=5_000_000): okay
 
-    if lookdown(CS_PIN: 0..63)
-        if lookdown(DC_PIN: 0..63)
-            if lookdown(DIN_PIN: 0..63)
-                if lookdown(CLK_PIN: 0..63)
-                    if lookdown(RES_PIN: 0..63)
-                        if okay := spi.start (DIN_PIN, -1, CLK_PIN, CLK_HZ, core#CPOL)
-                            _DC := DC_PIN
-                            _RES := RES_PIN
-                            _MOSI := DIN_PIN
-                            _SCK := CLK_PIN
-                            _CS := CS_PIN
-                            io.High(_DC)
-                            io.Output(_DC)
-                            io.High(_RES)
-                            io.Output(_RES)
-                            io.High(_CS)
-                            io.Output(_CS)
-                            Reset
-                            return okay
+    if lookdown(CS_PIN: 0..63) and lookdown(DC_PIN: 0..63) and lookdown(DIN_PIN: 0..63) and lookdown(CLK_PIN: 0..63) and lookdown(RES_PIN: 0..63)
+        if okay := spi.start (DIN_PIN, -1, CLK_PIN, CLK_HZ, core#CPOL)
+            _DC := DC_PIN
+            _RES := RES_PIN
+            _MOSI := DIN_PIN
+            _SCK := CLK_PIN
+            _CS := CS_PIN
+            io.High(_DC)
+            io.Output(_DC)
+            io.High(_RES)
+            io.Output(_RES)
+            io.High(_CS)
+            io.Output(_CS)
+            Reset
+            return okay
     return FALSE
 
 PUB Stop
