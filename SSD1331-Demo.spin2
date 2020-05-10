@@ -28,12 +28,12 @@ CON
     SER_TX      = cfg#SER_TX
     SER_BAUD    = 2_000_000
 
-    RES_PIN     = 36
-    DC_PIN      = 35
-    CS_PIN      = 34
-    CLK_PIN     = 33
-    DIN_PIN     = 32
-    CLK_HZ      = 6_500_000
+    RES_PIN     = 12
+    DC_PIN      = 11
+    CS_PIN      = 10
+    CLK_PIN     = 8
+    DIN_PIN     = 9
+    CLK_HZ      = 20_000_000
 
     WIDTH       = 96
     HEIGHT      = 64

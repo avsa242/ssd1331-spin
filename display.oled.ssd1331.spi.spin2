@@ -53,13 +53,13 @@ OBJ
 
     core    : "core.con.ssd1331"
     time    : "time"
-    spi     : "com.spi.bitbang-fast"
+    spi     : "com.spi"
     io      : "io"
 
 VAR
 
     long _DC, _RES, _MOSI, _SCK, _CS
-    long _ptr_framebuffer
+    long _ptr_drawbuffer
     byte _sh_SETCOLUMN, _sh_SETROW, _sh_SETCONTRAST_A, _sh_SETCONTRAST_B, _sh_SETCONTRAST_C
     byte _sh_MASTERCCTRL, _sh_SECPRECHG[3], _sh_REMAPCOLOR, _sh_DISPSTARTLINE, _sh_DISPOFFSET
     byte _sh_DISPMODE, _sh_MULTIPLEX, _sh_DIM, _sh_MASTERCFG, _sh_DISPONOFF, _sh_POWERSAVE
@@ -69,7 +69,7 @@ VAR
 PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN, CLK_HZ, drawbuffer_address): okay
 
     if lookdown(CS_PIN: 0..63) and lookdown(DC_PIN: 0..63) and lookdown(DIN_PIN: 0..63) and lookdown(CLK_PIN: 0..63) and lookdown(RES_PIN: 0..63)
-        if okay := spi.start (DIN_PIN, -1, CLK_PIN, CLK_HZ, core#CPOL)
+        if okay := spi.start (CLK_PIN, DIN_PIN, -1, CLK_HZ)
             _DC := DC_PIN
             _RES := RES_PIN
             _MOSI := DIN_PIN
@@ -135,7 +135,7 @@ PUB DefaultsCommon
 
 PUB Address(addr)
 ' Set framebuffer/display buffer address
-    _ptr_framebuffer := addr
+    _ptr_drawbuffer := addr
 
 PUB AddrMode(mode) | tmp
 ' Set display internal addressing mode
@@ -712,7 +712,7 @@ PUB SubpixelOrder(order) | tmp
 
 PUB Update
 ' Write the current display buffer to the display
-    writeReg(TRANS_DATA, _buff_sz, _ptr_framebuffer)
+    writeReg(TRANS_DATA, _buff_sz, _ptr_drawbuffer)
 
 PUB VertAltScan(enabled) | tmp
 ' Alternate Left-Right, Right-Left scanning, every other display line
@@ -747,8 +747,7 @@ PRI writeReg(trans_type, nr_bytes, buff_addr) | tmp
             return
 
     io.Low(_CS)
-    repeat tmp from 0 to nr_bytes-1
-        spi.write (_MOSI, _SCK, core#MOSI_BITORDER, 8, byte[buff_addr][tmp])
+    spi.WriteBytes(nr_bytes, buff_addr)
     io.High(_CS)
 
 {
