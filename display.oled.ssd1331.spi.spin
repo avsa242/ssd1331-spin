@@ -19,6 +19,8 @@ CON
     _DISP_XMAX  = _DISP_WIDTH-1
     _DISP_YMAX  = _DISP_HEIGHT-1
     _BUFF_SZ    = _DISP_WIDTH * _DISP_HEIGHT * 2
+    BYTESPERPX  = 2
+    BYTESPERLN  = _DISP_WIDTH * BYTESPERPX
     MAX_COLOR   = 65535
 
 ' Transaction type selection
