@@ -25,7 +25,7 @@ CON
     DC_PIN      = 11
     CS_PIN      = 10
     CLK_PIN     = 8
-    DIN_PIN     = 9
+    DIN_PIN     = 9                                         ' Must be CLK_PIN+1 (SmartPin SPI limitation)
     CLK_HZ      = 20_000_000
 ' --
 
