@@ -9,12 +9,15 @@ This is a P8X32A/Propeller, P2X8C4M64P/Propeller 2 driver object for the Solomon
 
 * P1: SPI connection at up to 20MHz
 * P2: SPI connection at up to 20MHz+ (max spec is 6MHz, but this isn't enforced. YMMV)
-* Most accelerated graphics primitives implemented, as well as a 'soft' pixel primitive
+* Most accelerated graphics primitives implemented
 * Supports horizontal and vertical mirroring
 * Supports interlaced and non-interlaced display
 * Supports normal and inverted display
+* Integration with the generic bitmap graphics library
 
 ## Requirements
+
+* Presence of bitmap graphics library (lib.gfx.bitmap)
 
 P1/SPIN1:
 * spin-standard-library
@@ -26,22 +29,16 @@ P2/SPIN2:
 ## Compiler Compatibility
 
 * P1/SPIN1: OpenSpin (tested with 1.00.81)
-* P2/SPIN2: FastSpin (tested with 4.2.3-beta)
+* P2/SPIN2: FastSpin (tested with 4.2.5-beta)
 * ~~BST~~ (incompatible - no preprocessor)
 * ~~Propeller Tool~~ (incompatible - no preprocessor)
 * ~~PNut~~ (incompatible - no preprocessor)
 
 ## Limitations
 
-* Very early development - may malfunction or outright fail to build
-* Some hardware abstraction methods still need some better/more intuitive parameters
-* Bitmap transfer is currently fixed to full frame transfer, starting at coords 0, 0
-* No scrolling support
+* No hardware-accelerated scrolling support
+* P2/SPIN2: Because of the way the smart-pin SPI engine works, the I/O pin connection is limited to MOSI being SCK_PIN+1
 
 ## TODO
 
-- [ ] Documentation
-- [x] Bitmap transfer
-- [ ] Scrolling
-- [ ] Size optimization
-- [ ] Re-write the demo such that each routine runs for a set time period, and implement benchmarking for that period of time
+- [ ] Hardware-accelerated scrolling
