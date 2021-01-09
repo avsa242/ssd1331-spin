@@ -667,6 +667,7 @@ PUB PrechargeSpeed(seg_a, seg_b, seg_c) | tmp[2]
 
 PUB Reset{}
 ' Reset the display controller
+    io.output(_RES)
     if lookdown(_RES: 0..31)
         io.high(_RES)
         time.msleep(1)
