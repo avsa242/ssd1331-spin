@@ -3,9 +3,9 @@
     Filename: display.oled.ssd1331.spi.spin
     Author: Jesse Burt
     Description: Driver for Solomon Systech SSD1331 RGB OLED displays
-    Copyright (c) 2020
+    Copyright (c) 2021
     Started: Apr 28, 2019
-    Updated: Jun 6, 2020
+    Updated: Jan 9, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -64,7 +64,7 @@ VAR
     long _ptr_drawbuffer
     byte _sh_SETCOLUMN, _sh_SETROW, _sh_SETCONTRAST_A, _sh_SETCONTRAST_B, _sh_SETCONTRAST_C
     byte _sh_MASTERCCTRL, _sh_SECPRECHG[3], _sh_REMAPCOLOR, _sh_DISPSTARTLINE, _sh_DISPOFFSET
-    byte _sh_DISPMODE, _sh_MULTIPLEX, _sh_DIM, _sh_MASTERCFG, _sh_DISPONOFF, _sh_POWERSAVE
+    byte _sh_DISPMODE, _sh_MULTIPLEX, _sh_DIM, _sh_MASTERCFG, _sh_DISPONOFF, _sh_PWRSAVE
     byte _sh_PHASE12PER, _sh_CLK, _sh_GRAYTABLE, _sh_PRECHGLEV, _sh_VCOMH, _sh_CMDLOCK
     byte _sh_HVSCROLL, _sh_FILL
 
@@ -77,61 +77,59 @@ PUB Start (CS_PIN, DC_PIN, DIN_PIN, CLK_PIN, RES_PIN, drawbuffer_address): okay
             _MOSI := DIN_PIN
             _SCK := CLK_PIN
             _CS := CS_PIN
-            io.High(_DC)
-            io.Output(_DC)
-            io.High(_RES)
-            io.Output(_RES)
-            Reset
-            Address (drawbuffer_address)
+            io.high(_DC)
+            io.output(_DC)
+            io.high(_RES)
+            io.output(_RES)
+            reset{}
+            address(drawbuffer_address)
             return okay
-    return FALSE
+    return FALSE                                ' something above failed
 
-PUB Stop
+PUB Stop{}
 
-    DisplayVisibility(ALL_OFF)
-    Powered (FALSE)
+    displayvisibility(ALL_OFF)
+    powered(FALSE)
 
-PUB Defaults
-' Apply power-on-reset default settings
-    ColorDepth (COLOR_65K)
-    MirrorH (FALSE)
-    Powered (FALSE)
-    DisplayVisibility(ALL_OFF)
-    DisplayStartLine (0)
-    DisplayOffset (0)
-    DisplayInverted (FALSE)
-    DisplayLines (64)
-    ExtSupply
-    PowerSaving (TRUE)
-    Phase1Period (7)
-    Phase2Period (4)
-    ClockFreq (956)
-    ClockDiv (1)
-    PrechargeSpeed (127, 127, 127)
-    PrechargeLevel (500)
-    COMHighLogicLevel (830)
-    CurrentLimit (16)
-    ContrastA (127)
-    ContrastB (127)
-    ContrastC (127)
-    Powered (TRUE)
-    DisplayBounds (0, 0, 95, 63)
-    ClearAccel
-    DisplayVisibility(NORMAL)
+PUB Defaults{}
+' Factory default settings
+    colordepth(COLOR_65K)
+    mirrorh(FALSE)
+    powered(FALSE)
+    displayvisibility(ALL_OFF)
+    displaystartline(0)
+    displayoffset(0)
+    displayinverted(FALSE)
+    displaylines(64)
+    extsupply{}
+    powersaving(TRUE)
+    phase1period(7)
+    phase2period(4)
+    clockfreq(956)
+    clockdiv(1)
+    prechargespeed(127, 127, 127)
+    prechargelevel(500)
+    comhighlogiclevel(830)
+    currentlimit(16)
+    contrasta(127)
+    contrastb(127)
+    contrastc(127)
+    powered(TRUE)
+    displaybounds(0, 0, 95, 63)
+    clearaccel{}
+    displayvisibility(NORMAL)
 
-PUB DefaultsCommon
-' Apply some more common default settings
-    Defaults                                                ' Start with POR settings
-    ClockDiv (1)
-    ClockFreq (980)
-    AddrMode (HORIZ)
-    MirrorH (FALSE)
-    SubpixelOrder (RGB)
-    VertAltScan (FALSE)
-    MirrorV (FALSE)
-    Interlaced (FALSE)
-    ColorDepth (COLOR_65K)
-    FillAccelEnabled (TRUE)
+PUB DefaultsCommon{}
+' Like Defaults, but with clock speed maxed out
+    defaults{}
+    clockfreq(980)
+    addrmode(HORIZ)
+    subpixelorder(RGB)
+    vertaltscan(FALSE)
+    mirrorv(FALSE)
+    interlaced(FALSE)
+    colordepth(COLOR_65K)
+    fillaccelenabled(TRUE)
 
 PUB Address(addr)
 ' Set framebuffer/display buffer address
@@ -145,14 +143,14 @@ PUB AddrMode(mode) | tmp
     tmp := _sh_REMAPCOLOR
     case mode
         HORIZ, VERT:
-        OTHER:
-            return (tmp >> core#FLD_ADDRINC) & %1
+        other:
+            return (tmp >> core#ADDRINC) & 1
 
-    _sh_REMAPCOLOR &= core#MASK_SEGREMAP
-    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | mode) & core#SSD1331_CMD_SETREMAP_MASK
-    tmp.byte[0] := core#SSD1331_CMD_SETREMAP
+    _sh_REMAPCOLOR &= core#SEGREMAP_MASK
+    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | mode) & core#SETREMAP_MASK
+    tmp.byte[0] := core#SETREMAP
     tmp.byte[1] := _sh_REMAPCOLOR
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB BoxAccel(sx, sy, ex, ey, boxcolor, fillcolor) | tmp[3]
 ' Draw a box, using the display's native/accelerated box function
@@ -161,7 +159,7 @@ PUB BoxAccel(sx, sy, ex, ey, boxcolor, fillcolor) | tmp[3]
     ex := sx #> ex <# _disp_width-1
     ey := sy #> ey <# _disp_height-1
 
-    tmp.byte[0] := core#SSD1331_CMD_DRAWRECT
+    tmp.byte[0] := core#DRAWRECT
     tmp.byte[1] := sx
     tmp.byte[2] := sy
     tmp.byte[3] := ex
@@ -172,17 +170,17 @@ PUB BoxAccel(sx, sy, ex, ey, boxcolor, fillcolor) | tmp[3]
     tmp.byte[8] := RGB565_R8 (fillcolor)
     tmp.byte[9] := RGB565_G8 (fillcolor)
     tmp.byte[10] := RGB565_B8 (fillcolor)
-    writeReg (TRANS_CMD, 11, @tmp)
+    writereg(TRANS_CMD, 11, @tmp)
 
 PUB ClearAccel | tmp[2]
 ' Clears the display directly, using the display's native/accelerated clear function
-    tmp.byte[0] := core#SSD1331_CMD_NOP3
-    tmp.byte[1] := core#SSD1331_CMD_CLEAR
+    tmp.byte[0] := core#NOP3
+    tmp.byte[1] := core#CLEAR
     tmp.byte[2] := 0
     tmp.byte[3] := 0
     tmp.byte[4] := 95
     tmp.byte[5] := 63
-    writeReg (TRANS_CMD, 6, @tmp)
+    writereg(TRANS_CMD, 6, @tmp)
 
 PUB ClockDiv(divider) | tmp
 ' Set clock frequency divider used by the display controller
@@ -192,14 +190,14 @@ PUB ClockDiv(divider) | tmp
     case divider
         1..16:
             divider -= 1
-        OTHER:
-            return (tmp & core#BITS_CLKDIV) + 1
+        other:
+            return (tmp & core#CLKDIV_BITS) + 1
 
-    _sh_CLK &= core#MASK_CLKDIV
+    _sh_CLK &= core#CLKDIV_MASK
     _sh_CLK := _sh_CLK | divider
-    tmp.byte[0] := core#SSD1331_CMD_CLOCKDIV
+    tmp.byte[0] := core#CLKDIV_FRQ
     tmp.byte[1] := divider
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB ClockFreq(freq) | tmp
 ' Set display internal oscillator frequency, in kHz
@@ -207,18 +205,21 @@ PUB ClockFreq(freq) | tmp
 '   Any other value returns the current setting
     tmp := _sh_CLK
     case freq
-        800, 812, 824, 836, 848, 860, 872, 884, 896, 908, 920, 932, 944, 956, 968, 980:
-            freq := lookdownz(freq: 800, 812, 824, 836, 848, 860, 872, 884, 896, 908, 920, 932, 944, 956, 968, 980) << core#FLD_FOSCFREQ
-        OTHER:
-            tmp := (tmp >> core#FLD_FOSCFREQ) & core#BITS_FOSCFREQ
-            result := lookupz (tmp: 800, 812, 824, 836, 848, 860, 872, 884, 896, 908, 920, 932, 944, 956, 968, 980)
+        800, 812, 824, 836, 848, 860, 872, 884, 896, 908, 920, 932, 944, 956,{
+}       968, 980:
+            freq := lookdownz(freq: 800, 812, 824, 836, 848, 860, 872, 884,{
+}           896, 908, 920, 932, 944, 956, 968, 980) << core#FOSCFREQ
+        other:
+            tmp := (tmp >> core#FOSCFREQ) & core#FOSCFREQ_BITS
+            result := lookupz (tmp: 800, 812, 824, 836, 848, 860, 872, 884,{
+}           896, 908, 920, 932, 944, 956, 968, 980)
             return
 
-    _sh_CLK &= core#MASK_FOSCFREQ
+    _sh_CLK &= core#FOSCFREQ_MASK
     _sh_CLK := _sh_CLK | freq
-    tmp.byte[0] := core#SSD1331_CMD_CLOCKDIV
+    tmp.byte[0] := core#CLKDIV_FRQ
     tmp.byte[1] := freq
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB ColorDepth(format) | tmp
 ' Set expected color format of pixel data
@@ -230,42 +231,42 @@ PUB ColorDepth(format) | tmp
     tmp := _sh_REMAPCOLOR
     case format
         COLOR_256, COLOR_65K, COLOR_65K2:
-            format <<= core#FLD_COLORFORMAT
-        OTHER:
-            return tmp >> core#FLD_COLORFORMAT
+            format <<= core#COLORFMT
+        other:
+            return tmp >> core#COLORFMT
 
-    _sh_REMAPCOLOR &= core#MASK_COLORFORMAT
+    _sh_REMAPCOLOR &= core#COLORFMT_MASK
     _sh_REMAPCOLOR := _sh_REMAPCOLOR | format
 
-    tmp.byte[0] := core#SSD1331_CMD_SETREMAP
+    tmp.byte[0] := core#SETREMAP
     tmp.byte[1] := _sh_REMAPCOLOR
 
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
-PUB COMHighLogicLevel(mV) | tmp
-' Set logic high level threshold of COM pins rel. to Vcc, in millivolts
+PUB COMHighLogicLevel(level) | tmp
+' Set logic high level threshold of COM pins relative to Vcc, in millivolts
 '   Valid values: 440, 520, 610, 710, 830
 '   Any other value returns the current setting
     tmp := _sh_VCOMH
-    case mV := lookdown(mv: 440, 520, 610, 710, 830)
+    case level := lookdown(level: 440, 520, 610, 710, 830)
         1..5:
-            mV := lookup(mV: $00, $10, $20, $30, $3E)
-        OTHER:
+            level := lookup(level: $00, $10, $20, $30, $3E)
+        other:
             result := lookdown(tmp: $00, $10, $20, $30, $3E)
             return lookup(result: 440, 520, 610, 710, 830)
 
-    _sh_VCOMH := mV
-    tmp.byte[0] := core#SSD1331_CMD_VCOMH
-    tmp.byte[1] := mV
-    writeReg (TRANS_CMD, 2, @tmp)
+    _sh_VCOMH := level
+    tmp.byte[0] := core#VCOMH
+    tmp.byte[1] := level
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB Contrast(level)
 ' Set display contrast/brightness
 '   Valid values: 0..255
 '   Any other value returns the current setting
-    ContrastA (level)
-    ContrastB (level)
-    ContrastC (level)
+    contrasta(level)
+    contrastb(level)
+    contrastc(level)
 
 PUB ContrastA(level) | tmp
 ' Set contrast/brightness level of subpixel a
@@ -274,13 +275,13 @@ PUB ContrastA(level) | tmp
     tmp := _sh_SETCONTRAST_A
     case level
         0..255:
-        OTHER:
+        other:
             return tmp
 
     _sh_SETCONTRAST_A := level
-    tmp.byte[0] := core#SSD1331_CMD_CONTRASTA
+    tmp.byte[0] := core#CONTRASTA
     tmp.byte[1] := level
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB ContrastB(level) | tmp
 ' Set contrast/brightness level of subpixel b
@@ -289,13 +290,13 @@ PUB ContrastB(level) | tmp
     tmp := _sh_SETCONTRAST_B
     case level
         0..255:
-        OTHER:
+        other:
             return tmp
 
     _sh_SETCONTRAST_B := level
-    tmp.byte[0] := core#SSD1331_CMD_CONTRASTB
+    tmp.byte[0] := core#CONTRASTB
     tmp.byte[1] := level
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB ContrastC(level) | tmp
 ' Set contrast/brightness level of subpixel c
@@ -304,13 +305,13 @@ PUB ContrastC(level) | tmp
     tmp := _sh_SETCONTRAST_C
     case level
         0..255:
-        OTHER:
+        other:
             return tmp
 
     _sh_SETCONTRAST_C := level
-    tmp.byte[0] := core#SSD1331_CMD_CONTRASTC
+    tmp.byte[0] := core#CONTRASTC
     tmp.byte[1] := level
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB CopyAccel(sx, sy, ex, ey, dx, dy) | tmp[2]
 ' Use the display's accelerated Copy Region function
@@ -320,57 +321,57 @@ PUB CopyAccel(sx, sy, ex, ey, dx, dy) | tmp[2]
 '   Any other value will be ignored
     case sx
         0..95:
-        OTHER:
+        other:
             return
 
     case sy
         0..63:
-        OTHER:
+        other:
             return
 
     case ex
         0..95:
-        OTHER:
+        other:
             return
 
     case ey
         0..63:
-        OTHER:
+        other:
             return
 
     case dx
         0..95:
-        OTHER:
+        other:
             return
 
     case dy
         0..63:
-        OTHER:
+        other:
             return
 
-    tmp.byte[0] := core#SSD1331_CMD_COPY
+    tmp.byte[0] := core#COPY
     tmp.byte[1] := sx
     tmp.byte[2] := sy
     tmp.byte[3] := ex
     tmp.byte[4] := ey
     tmp.byte[5] := dx
     tmp.byte[6] := dy
-    writeReg (TRANS_CMD, 7, @tmp)
+    writereg(TRANS_CMD, 7, @tmp)
 
 PUB CopyAccelInverted(enabled) | tmp
 ' Enable inverted colors, when using CopyAccel()
     tmp := _sh_FILL
-    case ||enabled
+    case ||(enabled)
         0, 1:
-            enabled := (||enabled << core#FLD_REVCOPY)
-        OTHER:
-            return ((tmp >> core#FLD_REVCOPY) & %1) * TRUE
+            enabled := ||(enabled) << core#REVCOPY
+        other:
+            return ((tmp >> core#REVCOPY) & 1) == 1
 
-    _sh_FILL &= core#MASK_REVCOPY
-    _sh_FILL := (_sh_FILL | enabled) & core#SSD1331_CMD_FILL_MASK
-    tmp.byte[0] := core#SSD1331_CMD_FILL
+    _sh_FILL &= core#REVCOPY_MASK
+    _sh_FILL := (_sh_FILL | enabled) & core#FILLCPY_MASK
+    tmp.byte[0] := core#FILLCPY
     tmp.byte[1] := _sh_FILL
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB CurrentLimit(divisor) | tmp
 ' Set master current limit divisor
@@ -378,13 +379,13 @@ PUB CurrentLimit(divisor) | tmp
     case divisor
         1..16:
             divisor -= 1
-        OTHER:
+        other:
             return tmp + 1
 
     _sh_MASTERCCTRL := divisor
-    tmp.byte[0] := core#SSD1331_CMD_MASTERCURRENT
+    tmp.byte[0] := core#MASTERCURRENT
     tmp.byte[1] := divisor
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB DisplayBounds(sx, sy, ex, ey) | tmp[2]
 ' Set drawable display region for subsequent drawing operations
@@ -392,30 +393,31 @@ PUB DisplayBounds(sx, sy, ex, ey) | tmp[2]
 '       sx, ex: 0..95
 '       sy, ey: 0..63
 '   Any other value will be ignored
-    ifnot lookup(sx: 0..95) or lookup(sy: 0..63) or lookup(ex: 0..95) or lookup(ey: 0..63)
+    ifnot lookup(sx: 0..95) or lookup(sy: 0..63) or lookup(ex: 0..95) or{
+}   lookup(ey: 0..63)
         return
 
-    tmp.byte[0] := core#SSD1331_CMD_SETCOLUMN
+    tmp.byte[0] := core#SETCOLUMN
     tmp.byte[1] := sx
     tmp.byte[2] := ex
 
-    writeReg (TRANS_CMD, 3, @tmp)
+    writereg(TRANS_CMD, 3, @tmp)
 
-    tmp.byte[0] := core#SSD1331_CMD_SETROW
+    tmp.byte[0] := core#SETROW
     tmp.byte[1] := sy
     tmp.byte[2] := ey
 
-    writeReg (TRANS_CMD, 3, @tmp)
+    writereg(TRANS_CMD, 3, @tmp)
 
 PUB DisplayInverted(enabled) | tmp
 ' Invert display colors
-    case ||enabled
+    case ||(enabled)
         0:
-            DisplayVisibility(NORMAL)
+            displayvisibility(NORMAL)
         1:
-            DisplayVisibility(INVERTED)
-        OTHER:
-            return FALSE
+            displayvisibility(INVERTED)
+        other:
+            return
 
 PUB DisplayLines(lines) | tmp
 ' Set maximum number of display lines
@@ -425,72 +427,72 @@ PUB DisplayLines(lines) | tmp
     case lines
         16..64:
             lines -= 1
-        OTHER:
+        other:
             return tmp + 1
 
     _sh_MULTIPLEX := lines
-    tmp.byte[0] := core#SSD1331_CMD_SETMULTIPLEX
+    tmp.byte[0] := core#SETMULTIPLEX
     tmp.byte[1] := lines
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB DisplayOffset(lines) | tmp
 ' Set display offset/vertical shift
     tmp := _sh_DISPOFFSET
     case lines
         0..63:
-        OTHER:
+        other:
             return tmp
 
     _sh_DISPOFFSET := lines
-    tmp.byte[0] := core#SSD1331_CMD_DISPLAYOFFSET
+    tmp.byte[0] := core#DISPLAYOFFSET
     tmp.byte[1] := lines
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB DisplayStartLine(disp_line) | tmp
 ' Set display start line
     tmp := _sh_DISPSTARTLINE
     case disp_line
         0..63:
-        OTHER:
+        other:
             return tmp
 
     _sh_DISPSTARTLINE := disp_line
-    tmp.byte[0] := core#SSD1331_CMD_STARTLINE
+    tmp.byte[0] := core#STARTLINE
     tmp.byte[1] := disp_line
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB DisplayVisibility(mode) | tmp
 ' Set display visibility
     tmp := _sh_DISPMODE
     case mode
         NORMAL, ALL_ON, ALL_OFF, INVERTED:
-            mode := mode + core#SSD1331_CMD_NORMALDISPLAY
-        OTHER:
-            return (_sh_DISPMODE - core#SSD1331_CMD_NORMALDISPLAY)
+            mode := mode + core#NORMALDISPLAY
+        other:
+            return (_sh_DISPMODE - core#NORMALDISPLAY)
 
     _sh_DISPMODE := mode
-    writeReg (TRANS_CMD, 1, @mode)
+    writereg(TRANS_CMD, 1, @mode)
 
-PUB ExtSupply | tmp
+PUB ExtSupply{} | tmp
 
-    tmp.byte[0] := core#SSD1331_CMD_SETMASTER
+    tmp.byte[0] := core#SETMASTER
     tmp.byte[1] := core#MASTERCFG_EXT_VCC
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB FillAccelEnabled(enabled) | tmp
 ' Enable the display's native/accelerated fill function, when using BoxAccel()
     tmp := _sh_FILL
-    case ||enabled
+    case ||(enabled)
         0, 1:
-            enabled := ||enabled & %1
-        OTHER:
-            return (tmp & %1) * TRUE
+            enabled := ||(enabled) & 1
+        other:
+            return (tmp & 1) == 1
 
-    _sh_FILL &= core#MASK_FILL
-    _sh_FILL := (_sh_FILL | enabled) & core#SSD1331_CMD_FILL_MASK
-    tmp.byte[0] := core#SSD1331_CMD_FILL
+    _sh_FILL &= core#FILL_MASK
+    _sh_FILL := (_sh_FILL | enabled) & core#FILLCPY_MASK
+    tmp.byte[0] := core#FILL
     tmp.byte[1] := _sh_FILL
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB Interlaced(enabled) | tmp
 ' Alternate every other display line:
@@ -499,17 +501,17 @@ PUB Interlaced(enabled) | tmp
 '   Valid values: TRUE (-1 or 1), FALSE (0)
 '   Any other value returns the current setting
     tmp := _sh_REMAPCOLOR
-    case ||enabled
+    case ||(enabled)
         0, 1:
-            enabled := (||enabled ^ 1) << core#FLD_COMSPLIT
-        OTHER:
-            return not (((tmp >> core#FLD_COMSPLIT) & %1) * TRUE)
+            enabled := (||(enabled) ^ 1) << core#COMSPLIT
+        other:
+            return not (((tmp >> core#COMSPLIT) & 1) == 1)
 
-    _sh_REMAPCOLOR &= core#MASK_COMSPLIT
-    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | enabled) & core#SSD1331_CMD_SETREMAP_MASK
-    tmp.byte[0] := core#SSD1331_CMD_SETREMAP
+    _sh_REMAPCOLOR &= core#COMSPLIT_MASK
+    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | enabled) & core#SETREMAP_MASK
+    tmp.byte[0] := core#SETREMAP
     tmp.byte[1] := _sh_REMAPCOLOR
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB LineAccel(sx, sy, ex, ey, color) | tmp[2]
 ' Draw a line, using the display's native/accelerated line function
@@ -518,7 +520,7 @@ PUB LineAccel(sx, sy, ex, ey, color) | tmp[2]
     ex := 0 #> ex <# _disp_width-1
     ey := 0 #> ey <# _disp_height-1
 
-    tmp.byte[0] := core#SSD1331_CMD_DRAWLINE
+    tmp.byte[0] := core#DRAWLINE
     tmp.byte[1] := sx
     tmp.byte[2] := sy
     tmp.byte[3] := ex
@@ -526,170 +528,176 @@ PUB LineAccel(sx, sy, ex, ey, color) | tmp[2]
     tmp.byte[5] := RGB565_R8 (color)
     tmp.byte[6] := RGB565_G8 (color)
     tmp.byte[7] := RGB565_B8 (color)
-    writeReg (TRANS_CMD, 8, @tmp)
+    writereg(TRANS_CMD, 8, @tmp)
 
 PUB MirrorH(enabled) | tmp
 ' Mirror the display, horizontally
 '   Valid values: TRUE (-1 or 1), FALSE (0)
 '   Any other value returns the current setting
     tmp := _sh_REMAPCOLOR
-    case ||enabled
+    case ||(enabled)
         0, 1:
-            enabled := (||enabled) << core#FLD_SEGREMAP
-        OTHER:
-            return ((tmp >> core#FLD_SEGREMAP) & %1) * TRUE
+            enabled := (||(enabled)) << core#SEGREMAP
+        other:
+            return ((tmp >> core#SEGREMAP) & 1) == 1
 
-    _sh_REMAPCOLOR &= core#MASK_SEGREMAP
-    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | enabled) & core#SSD1331_CMD_SETREMAP_MASK
-    tmp.byte[0] := core#SSD1331_CMD_SETREMAP
+    _sh_REMAPCOLOR &= core#SEGREMAP_MASK
+    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | enabled) & core#SETREMAP_MASK
+    tmp.byte[0] := core#SETREMAP
     tmp.byte[1] := _sh_REMAPCOLOR
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB MirrorV(enabled) | tmp
 ' Mirror the display, vertically
 '   Valid values: TRUE (-1 or 1), FALSE (0)
 '   Any other value returns the current setting
     tmp := _sh_REMAPCOLOR
-    case ||enabled
+    case ||(enabled)
         0, 1:
-            enabled := (||enabled) << core#FLD_COMREMAP
-        OTHER:
-            return ((tmp >> core#FLD_COMREMAP) & %1) * TRUE
+            enabled := ||(enabled) << core#COMREMAP
+        other:
+            return ((tmp >> core#COMREMAP) & 1) == 1
 
-    _sh_REMAPCOLOR &= core#MASK_COMREMAP
-    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | enabled) & core#SSD1331_CMD_SETREMAP_MASK
-    tmp.byte[0] := core#SSD1331_CMD_SETREMAP
+    _sh_REMAPCOLOR &= core#COMREMAP_MASK
+    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | enabled) & core#SETREMAP_MASK
+    tmp.byte[0] := core#SETREMAP
     tmp.byte[1] := _sh_REMAPCOLOR
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
-PUB NoOp | tmp
+PUB NoOp{} | tmp
 ' No-operation
-    tmp := core#SSD1331_CMD_NOP3
-    writeReg (TRANS_CMD, 1, @tmp)
+    tmp := core#NOP3
+    writereg(TRANS_CMD, 1, @tmp)
 
 PUB Phase1Period(clks) | tmp
 ' Set discharge/phase 1 period, in display clocks
     tmp := _sh_PHASE12PER
     case clks
         1..15:
-        OTHER:
-            return tmp & core#BITS_PHASE1
+        other:
+            return tmp & core#PHASE1
 
-    _sh_PHASE12PER &= core#MASK_PHASE1
+    _sh_PHASE12PER &= core#PHASE1_MASK
     _sh_PHASE12PER := (_sh_PHASE12PER | clks)
-    tmp.byte[0] := core#SSD1331_CMD_PRECHARGE
+    tmp.byte[0] := core#PRECHG
     tmp.byte[1] := _sh_PHASE12PER
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB Phase2Period(clks) | tmp
 ' Set charge/phase 2 period, in display clocks
     tmp := _sh_PHASE12PER
     case clks
         1..15:
-            clks <<= core#FLD_PHASE2
-        OTHER:
-            return (tmp >> core#FLD_PHASE2) & core#BITS_PHASE2
+            clks <<= core#PHASE2
+        other:
+            return (tmp >> core#PHASE2) & core#PHASE2
 
-    _sh_PHASE12PER &= core#MASK_PHASE2
+    _sh_PHASE12PER &= core#PHASE2_MASK
     _sh_PHASE12PER := (_sh_PHASE12PER | clks)
-    tmp.byte[0] := core#SSD1331_CMD_PRECHARGE
+    tmp.byte[0] := core#PRECHG
     tmp.byte[1] := _sh_PHASE12PER
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB PlotAccel(x, y, color) | tmp[2]
 ' Draw a pixel, using the display's native/accelerated plot/pixel function
     x := 0 #> x <# _disp_width-1
     y := 0 #> y <# _disp_height-1
-    tmp.byte[0] := core#SSD1331_CMD_SETCOLUMN
+    tmp.byte[0] := core#SETCOLUMN
     tmp.byte[1] := x
     tmp.byte[2] := 95
-    tmp.byte[3] := core#SSD1331_CMD_SETROW
+    tmp.byte[3] := core#SETROW
     tmp.byte[4] := y
     tmp.byte[5] := 63
     
-    writeReg (TRANS_CMD, 6, @tmp)
+    writereg(TRANS_CMD, 6, @tmp)
 
-    time.USleep (3)
+    time.usleep(3)
 
-    writeReg (TRANS_DATA, 2, @color)
+    writereg(TRANS_DATA, 2, @color)
 
 PUB Powered(enabled) | tmp
 ' Enable display power
     tmp := _sh_DISPONOFF
-    case ||enabled
+    case ||(enabled)
         OFF, ON, DIM:
-            enabled := lookupz(||enabled: core#SSD1331_CMD_DISPLAYOFF, core#SSD1331_CMD_DISPLAYON, core#SSD1331_CMD_DISPLAYONDIM)
-        OTHER:
-            return lookdownz(tmp: core#SSD1331_CMD_DISPLAYOFF, core#SSD1331_CMD_DISPLAYON, core#SSD1331_CMD_DISPLAYONDIM)
+            enabled := lookupz(||(enabled): core#DISPLAYOFF, core#DISPLAYON,{
+}           core#DISPLAYONDIM)
+        other:
+            return lookdownz(tmp: core#DISPLAYOFF, core#DISPLAYON,{
+}           core#DISPLAYONDIM)
 
     _sh_DISPONOFF := enabled
-    writeReg (TRANS_CMD, 1, @_sh_DISPONOFF)
+    writereg(TRANS_CMD, 1, @_sh_DISPONOFF)
 
 PUB PowerSaving(enabled) | tmp
 ' Enable display power saving mode
 '   Valid values: TRUE (-1 or 1), FALSE (0)
 '   Any other value returns the current setting
-    tmp := _sh_POWERSAVE
-    case ||enabled
+    tmp := _sh_PWRSAVE
+    case ||(enabled)
         0, 1:
-            enabled := lookupz(||enabled: core#POWERMODE_POWERSAVE_DIS, core#POWERMODE_POWERSAVE_ENA)
-        OTHER:
-            return (lookdownz(_sh_POWERSAVE: core#POWERMODE_POWERSAVE_DIS, core#POWERMODE_POWERSAVE_ENA) & %1) * TRUE
+            enabled := lookupz(||(enabled): core#PWRSAVE_DIS, core#PWRSAVE_ENA)
+        other:
+            return (lookdownz(_sh_PWRSAVE: core#PWRSAVE_DIS, core#PWRSAVE_ENA) & 1) == 1
 
-    _sh_POWERSAVE := enabled
-    tmp.byte[0] := core#SSD1331_CMD_POWERMODE
+    _sh_PWRSAVE := enabled
+    tmp.byte[0] := core#PWRMODE
     tmp.byte[1] := enabled
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
-PUB PrechargeLevel(mV) | tmp
+PUB PrechargeLevel(level) | tmp
 ' Set first pre-charge voltage level (phase 2) of segment pins, in millivolts
     tmp := _sh_PRECHGLEV
-    case mV := lookdown(mv: 100, 110, 130, 140, 150, 170, 180, 190, 200, 220, 230, 240, 260, 270, 280, 300, 310, 320, 330, 350, 360, 370, 390, 400, 410, 430, 440, 450, 460, 480, 490, 500)
+    case level := lookdown(level: 100, 110, 130, 140, 150, 170, 180, 190,{
+}   200, 220, 230, 240, 260, 270, 280, 300, 310, 320, 330, 350, 360, 370,{
+}   390, 400, 410, 430, 440, 450, 460, 480, 490, 500)
         1..32:
-            mV := (mV - 1) << 1
-        OTHER:
+            level := (level - 1) << 1
+        other:
             result := (tmp >> 1)
-            return lookupz(result: 100, 110, 130, 140, 150, 170, 180, 190, 200, 220, 230, 240, 260, 270, 280, 300, 310, 320, 330, 350, 360, 370, 390, 400, 410, 430, 440, 450, 460, 480, 490, 500)
+            return lookupz(result: 100, 110, 130, 140, 150, 170, 180, 190,{
+}           200, 220, 230, 240, 260, 270, 280, 300, 310, 320, 330, 350, 360,{
+}           370, 390, 400, 410, 430, 440, 450, 460, 480, 490, 500)
 
-    _sh_PRECHGLEV := mV
-    tmp.byte[0] := core#SSD1331_CMD_PRECHARGELEVEL
-    tmp.byte[1] := mV
-    writeReg (TRANS_CMD, 2, @tmp)
+    _sh_PRECHGLEV := level
+    tmp.byte[0] := core#PRECHGLVL
+    tmp.byte[1] := level
+    writereg(TRANS_CMD, 2, @tmp)
 
 PUB PrechargeSpeed(seg_a, seg_b, seg_c) | tmp[2]
 
     case seg_a
         $00..$FF:
-        OTHER:
+        other:
             return _sh_SECPRECHG.byte[0]
     case seg_b
         $00..$FF:
-        OTHER:
+        other:
             return _sh_SECPRECHG.byte[1]
     case seg_c
         $00..$FF:
-        OTHER:
+        other:
             return _sh_SECPRECHG.byte[2]
 
     _sh_SECPRECHG[0] := seg_a
     _sh_SECPRECHG[1] := seg_b
     _sh_SECPRECHG[2] := seg_c
 
-    tmp.byte[0] := core#SSD1331_CMD_PRECHARGEA
+    tmp.byte[0] := core#PRECHGA
     tmp.byte[1] := seg_a
-    tmp.byte[2] := core#SSD1331_CMD_PRECHARGEB
+    tmp.byte[2] := core#PRECHGB
     tmp.byte[3] := seg_b
-    tmp.byte[4] := core#SSD1331_CMD_PRECHARGEC
+    tmp.byte[4] := core#PRECHGC
     tmp.byte[5] := seg_c
-    writeReg (TRANS_CMD, 6, @tmp)
+    writereg(TRANS_CMD, 6, @tmp)
 
-PUB Reset
+PUB Reset{}
 ' Reset the display controller
-    io.High(_RES)
-    time.MSleep (1)
-    io.Low(_RES)
-    time.MSleep (10)
-    io.High(_RES)
+    io.high(_RES)
+    time.msleep(1)
+    io.low(_RES)
+    time.msleep(10)
+    io.high(_RES)
 
 PUB SubpixelOrder(order) | tmp
 ' Set subpixel color order
@@ -700,53 +708,53 @@ PUB SubpixelOrder(order) | tmp
     tmp := _sh_REMAPCOLOR
     case order
         RGB, BGR:
-            order <<= core#FLD_SUBPIX_ORDER
-        OTHER:
-            return (tmp >> core#FLD_SUBPIX_ORDER) & %1
+            order <<= core#SUBPIX_ORDER
+        other:
+            return (tmp >> core#SUBPIX_ORDER) & 1
 
-    _sh_REMAPCOLOR &= core#MASK_SUBPIX_ORDER
-    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | order) & core#SSD1331_CMD_SETREMAP_MASK
-    tmp.byte[0] := core#SSD1331_CMD_SETREMAP
+    _sh_REMAPCOLOR &= core#SUBPIX_ORDER_MASK
+    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | order) & core#SETREMAP_MASK
+    tmp.byte[0] := core#SETREMAP
     tmp.byte[1] := _sh_REMAPCOLOR
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
-PUB Update
+PUB Update{}
 ' Write the current display buffer to the display
-    writeReg(TRANS_DATA, _buff_sz, _ptr_drawbuffer)
+    writereg(TRANS_DATA, _buff_sz, _ptr_drawbuffer)
 
 PUB VertAltScan(enabled) | tmp
 ' Alternate Left-Right, Right-Left scanning, every other display line
 '   Valid values: TRUE (-1 or 1), FALSE (0)
 '   Any other value returns the current setting
     tmp := _sh_REMAPCOLOR
-    case ||enabled
+    case ||(enabled)
         0, 1:
-            enabled := (||enabled) << core#FLD_COMLR_SWAP
-        OTHER:
-            return ((tmp >> core#FLD_COMLR_SWAP) & %1) * TRUE
+            enabled := ||(enabled) << core#COMLR_SWAP
+        other:
+            return ((tmp >> core#COMLR_SWAP) & 1) == 1
 
-    _sh_REMAPCOLOR &= core#MASK_COMLR_SWAP
-    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | enabled) & core#SSD1331_CMD_SETREMAP_MASK
-    tmp.byte[0] := core#SSD1331_CMD_SETREMAP
+    _sh_REMAPCOLOR &= core#COMLR_SWAP_MASK
+    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | enabled) & core#SETREMAP_MASK
+    tmp.byte[0] := core#SETREMAP
     tmp.byte[1] := _sh_REMAPCOLOR
-    writeReg (TRANS_CMD, 2, @tmp)
+    writereg(TRANS_CMD, 2, @tmp)
 
-PUB WriteBuffer(buff_addr, buff_sz)
+PUB WriteBuffer(ptr_buff, buff_sz)
 ' Write alternate buffer to display
-    writeReg(TRANS_DATA, buff_sz, buff_addr)
+    writereg(TRANS_DATA, buff_sz, ptr_buff)
 
-PRI writeReg(trans_type, nr_bytes, buff_addr) | tmp
-
+PRI writeReg(trans_type, nr_bytes, ptr_buff)
+' Write nr_bytes from ptr_buff to device
     case trans_type
         TRANS_DATA:
-            io.High(_DC)
+            io.high(_DC)
         TRANS_CMD:
-            io.Low(_DC)
-
-        OTHER:
+            io.low(_DC)
+        other:
             return
 
-    spi.write (TRUE, buff_addr, nr_bytes, TRUE) ' Write SPI transaction with blocking enabled
+    ' write with blocking enabled, and raise CS afterwards
+    spi.write(TRUE, ptr_buff, nr_bytes, TRUE)
 
 {
     --------------------------------------------------------------------------------------------------------
