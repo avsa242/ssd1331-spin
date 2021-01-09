@@ -57,6 +57,7 @@ PUB Main{} | time_ms
     setup{}
     oled.clearall{}
 
+    ' change these to suit the orientation of your display
     oled.mirrorh(FALSE)
     oled.mirrorv(FALSE)
 

@@ -143,8 +143,7 @@ PUB AddrMode(mode): curr_mode
         other:
             return ((curr_mode >> core#ADDRINC) & 1)
 
-    _sh_REMAPCOLOR &= core#SEGREMAP_MASK
-    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | mode) & core#SETREMAP_MASK
+    _sh_REMAPCOLOR := ((_sh_REMAPCOLOR & core#SEGREMAP_MASK) | mode)
     mode.byte[0] := core#SETREMAP
     mode.byte[1] := _sh_REMAPCOLOR
     writereg(TRANS_CMD, 2, @mode)
@@ -190,8 +189,7 @@ PUB ClockDiv(divider): curr_div
         other:
             return ((curr_div & core#CLKDIV_BITS) + 1)
 
-    _sh_CLK &= core#CLKDIV_MASK
-    _sh_CLK := _sh_CLK | divider
+    _sh_CLK := ((_sh_CLK & core#CLKDIV_MASK) | divider)
     divider.byte[0] := core#CLKDIV_FRQ
     divider.byte[1] := _sh_CLK
     writereg(TRANS_CMD, 2, @divider)
@@ -211,8 +209,7 @@ PUB ClockFreq(freq): curr_freq
             return lookupz (curr_freq: 800, 812, 824, 836, 848, 860, 872, 884,{
 }           896, 908, 920, 932, 944, 956, 968, 980)
 
-    _sh_CLK &= core#FOSCFREQ_MASK
-    _sh_CLK := _sh_CLK | freq
+    _sh_CLK := ((_sh_CLK & core#FOSCFREQ_MASK) | freq)
     freq.byte[0] := core#CLKDIV_FRQ
     freq.byte[1] := _sh_CLK
     writereg(TRANS_CMD, 2, @freq)
@@ -231,8 +228,7 @@ PUB ColorDepth(format): curr_fmt
         other:
             return curr_fmt >> core#COLORFMT
 
-    _sh_REMAPCOLOR &= core#COLORFMT_MASK
-    _sh_REMAPCOLOR := _sh_REMAPCOLOR | format
+    _sh_REMAPCOLOR := ((_sh_REMAPCOLOR & core#COLORFMT_MASK) | format)
     format.byte[0] := core#SETREMAP
     format.byte[1] := _sh_REMAPCOLOR
     writereg(TRANS_CMD, 2, @format)
@@ -353,8 +349,7 @@ PUB CopyAccelInverted(state): curr_state
         other:
             return (((curr_state >> core#REVCOPY) & 1) == 1)
 
-    _sh_FILL &= core#REVCOPY_MASK
-    _sh_FILL := (_sh_FILL | state) & core#FILLCPY_MASK
+    _sh_FILL := ((_sh_FILL & core#REVCOPY_MASK) | state)
     state.byte[0] := core#FILLCPY
     state.byte[1] := _sh_FILL
     writereg(TRANS_CMD, 2, @state)
@@ -467,30 +462,28 @@ PUB FillAccelEnabled(state): curr_state
         other:
             return ((curr_state & 1) == 1)
 
-    _sh_FILL &= core#FILL_MASK
-    _sh_FILL := (_sh_FILL | state) & core#FILLCPY_MASK
+    _sh_FILL := ((_sh_FILL & core#FILL_MASK) | state)
     state.byte[0] := core#FILL
     state.byte[1] := _sh_FILL
     writereg(TRANS_CMD, 2, @state)
 
-PUB Interlaced(enabled) | tmp
+PUB Interlaced(state): curr_state
 ' Alternate every other display line:
 ' Lines 0..31 will appear on even rows (starting on row 0)
 ' Lines 32..63 will appear on odd rows (starting on row 1)
 '   Valid values: TRUE (-1 or 1), FALSE (0)
 '   Any other value returns the current setting
-    tmp := _sh_REMAPCOLOR
-    case ||(enabled)
+    curr_state := _sh_REMAPCOLOR
+    case ||(state)
         0, 1:
-            enabled := (||(enabled) ^ 1) << core#COMSPLIT
+            state := (||(state) ^ 1) << core#COMSPLIT
         other:
-            return not (((tmp >> core#COMSPLIT) & 1) == 1)
+            return not (((curr_state >> core#COMSPLIT) & 1) == 1)
 
-    _sh_REMAPCOLOR &= core#COMSPLIT_MASK
-    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | enabled) & core#SETREMAP_MASK
-    tmp.byte[0] := core#SETREMAP
-    tmp.byte[1] := _sh_REMAPCOLOR
-    writereg(TRANS_CMD, 2, @tmp)
+    _sh_REMAPCOLOR := ((_sh_REMAPCOLOR & core#COMSPLIT_MASK) | state)
+    state.byte[0] := core#SETREMAP
+    state.byte[1] := _sh_REMAPCOLOR
+    writereg(TRANS_CMD, 2, @state)
 
 PUB LineAccel(sx, sy, ex, ey, color) | tmp[2]
 ' Draw a line, using the display's native/accelerated line function
@@ -509,73 +502,69 @@ PUB LineAccel(sx, sy, ex, ey, color) | tmp[2]
     tmp.byte[7] := rgb565_b8(color)
     writereg(TRANS_CMD, 8, @tmp)
 
-PUB MirrorH(enabled) | tmp
+PUB MirrorH(state): curr_state
 ' Mirror the display, horizontally
 '   Valid values: TRUE (-1 or 1), FALSE (0)
 '   Any other value returns the current setting
-    tmp := _sh_REMAPCOLOR
-    case ||(enabled)
+    curr_state := _sh_REMAPCOLOR
+    case ||(state)
         0, 1:
-            enabled := ||(enabled) << core#SEGREMAP
+            state := ||(state) << core#SEGREMAP
         other:
-            return ((tmp >> core#SEGREMAP) & 1) == 1
+            return ((curr_state >> core#SEGREMAP) & 1) == 1
 
-    _sh_REMAPCOLOR &= core#SEGREMAP_MASK
-    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | enabled) & core#SETREMAP_MASK
-    tmp.byte[0] := core#SETREMAP
-    tmp.byte[1] := _sh_REMAPCOLOR
-    writereg(TRANS_CMD, 2, @tmp)
+    _sh_REMAPCOLOR := ((_sh_REMAPCOLOR & core#SEGREMAP_MASK | state))
+    state.byte[0] := core#SETREMAP
+    state.byte[1] := _sh_REMAPCOLOR
+    writereg(TRANS_CMD, 2, @state)
 
-PUB MirrorV(enabled) | tmp
+PUB MirrorV(state): curr_state
 ' Mirror the display, vertically
 '   Valid values: TRUE (-1 or 1), FALSE (0)
 '   Any other value returns the current setting
-    tmp := _sh_REMAPCOLOR
-    case ||(enabled)
+    curr_state := _sh_REMAPCOLOR
+    case ||(state)
         0, 1:
-            enabled := ||(enabled) << core#COMREMAP
+            state := ||(state) << core#COMREMAP
         other:
-            return ((tmp >> core#COMREMAP) & 1) == 1
+            return ((curr_state >> core#COMREMAP) & 1) == 1
 
-    _sh_REMAPCOLOR &= core#COMREMAP_MASK
-    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | enabled) & core#SETREMAP_MASK
-    tmp.byte[0] := core#SETREMAP
-    tmp.byte[1] := _sh_REMAPCOLOR
-    writereg(TRANS_CMD, 2, @tmp)
+    _sh_REMAPCOLOR := ((_sh_REMAPCOLOR & core#COMREMAP_MASK) | state)
+    state.byte[0] := core#SETREMAP
+    state.byte[1] := _sh_REMAPCOLOR
+    writereg(TRANS_CMD, 2, @state)
 
 PUB NoOp{} | tmp
 ' No-operation
     tmp := core#NOP3
     writereg(TRANS_CMD, 1, @tmp)
 
-PUB Phase1Period(clks) | tmp
+PUB Phase1Period(clks): curr_clks
 ' Set discharge/phase 1 period, in display clocks
-    tmp := _sh_PHASE12PER
+    curr_clks := _sh_PHASE12PER
     case clks
         1..15:
         other:
-            return tmp & core#PHASE1
+            return curr_clks & core#PHASE1
 
-    _sh_PHASE12PER &= core#PHASE1_MASK
-    _sh_PHASE12PER := (_sh_PHASE12PER | clks)
-    tmp.byte[0] := core#PRECHG
-    tmp.byte[1] := _sh_PHASE12PER
-    writereg(TRANS_CMD, 2, @tmp)
+    _sh_PHASE12PER := ((_sh_PHASE12PER & core#PHASE1_MASK) | clks)
+    clks.byte[0] := core#PRECHG
+    clks.byte[1] := _sh_PHASE12PER
+    writereg(TRANS_CMD, 2, @clks)
 
-PUB Phase2Period(clks) | tmp
+PUB Phase2Period(clks): curr_clks
 ' Set charge/phase 2 period, in display clocks
-    tmp := _sh_PHASE12PER
+    curr_clks := _sh_PHASE12PER
     case clks
         1..15:
             clks <<= core#PHASE2
         other:
-            return (tmp >> core#PHASE2) & core#PHASE2
+            return (curr_clks >> core#PHASE2) & core#PHASE2
 
-    _sh_PHASE12PER &= core#PHASE2_MASK
-    _sh_PHASE12PER := (_sh_PHASE12PER | clks)
-    tmp.byte[0] := core#PRECHG
-    tmp.byte[1] := _sh_PHASE12PER
-    writereg(TRANS_CMD, 2, @tmp)
+    _sh_PHASE12PER := ((_sh_PHASE12PER & core#PHASE2_MASK) | clks)
+    clks.byte[0] := core#PRECHG
+    clks.byte[1] := _sh_PHASE12PER
+    writereg(TRANS_CMD, 2, @clks)
 
 PUB PlotAccel(x, y, color) | tmp[2]
 ' Draw a pixel, using the display's native/accelerated plot/pixel function
@@ -594,33 +583,32 @@ PUB PlotAccel(x, y, color) | tmp[2]
 
     writereg(TRANS_DATA, 2, @color)
 
-PUB Powered(enabled)
+PUB Powered(state): curr_state
 ' Enable display power
-    case ||(enabled)
+    case ||(state)
         OFF, ON, DIM:
-            enabled := lookupz(||(enabled): core#DISPLAYOFF, core#DISPLAYON,{
+            state := lookupz(||(state): core#DISPLAYOFF, core#DISPLAYON,{
 }           core#DISPLAYONDIM)
-            _sh_DISPONOFF := enabled
+            _sh_DISPONOFF := state
             writereg(TRANS_CMD, 1, @_sh_DISPONOFF)
         other:
             return lookdownz(_sh_DISPONOFF: core#DISPLAYOFF, core#DISPLAYON,{
 }           core#DISPLAYONDIM)
 
-PUB PowerSaving(enabled) | tmp
+PUB PowerSaving(state): curr_state
 ' Enable display power saving mode
 '   Valid values: TRUE (-1 or 1), FALSE (0)
 '   Any other value returns the current setting
-    tmp := _sh_PWRSAVE
-    case ||(enabled)
+    case ||(state)
         0, 1:
-            enabled := lookupz(||(enabled): core#PWRSAVE_DIS, core#PWRSAVE_ENA)
+            state := lookupz(||(state): core#PWRSAVE_DIS, core#PWRSAVE_ENA)
+            _sh_PWRSAVE := state
+            state.byte[0] := core#PWRMODE
+            state.byte[1] := _sh_PWRSAVE
+            writereg(TRANS_CMD, 2, @state)
         other:
-            return (lookdownz(_sh_PWRSAVE: core#PWRSAVE_DIS, core#PWRSAVE_ENA) & 1) == 1
-
-    _sh_PWRSAVE := enabled
-    tmp.byte[0] := core#PWRMODE
-    tmp.byte[1] := enabled
-    writereg(TRANS_CMD, 2, @tmp)
+            curr_state := _sh_PWRSAVE
+            return (lookdownz(curr_state: core#PWRSAVE_DIS, core#PWRSAVE_ENA) & 1) == 1
 
 PUB PrechargeLevel(level): curr_lvl
 ' Set first pre-charge voltage level (phase 2) of segment pins, in millivolts
@@ -688,8 +676,7 @@ PUB SubpixelOrder(order): curr_ord
         other:
             return (curr_ord >> core#SUBPIX_ORDER) & 1
 
-    _sh_REMAPCOLOR &= core#SUBPIX_ORDER_MASK
-    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | order) & core#SETREMAP_MASK
+    _sh_REMAPCOLOR := ((_sh_REMAPCOLOR & core#SUBPIX_ORDER_MASK) | order)
     order.byte[0] := core#SETREMAP
     order.byte[1] := _sh_REMAPCOLOR
     writereg(TRANS_CMD, 2, @order)
@@ -709,8 +696,7 @@ PUB VertAltScan(state): curr_state
         other:
             return (((curr_state >> core#COMLR_SWAP) & 1) == 1)
 
-    _sh_REMAPCOLOR &= core#COMLR_SWAP_MASK
-    _sh_REMAPCOLOR := (_sh_REMAPCOLOR | state) & core#SETREMAP_MASK
+    _sh_REMAPCOLOR := ((_sh_REMAPCOLOR & core#COMLR_SWAP_MASK) | state)
     state.byte[0] := core#SETREMAP
     state.byte[1] := _sh_REMAPCOLOR
     writereg(TRANS_CMD, 2, @state)
