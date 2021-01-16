@@ -178,7 +178,7 @@ PUB Demo_Box(testtime) | iteration, c
     report(testtime, iteration)
     return iteration
 
-PUB Demo_BoxFilled (testtime) | iteration, c
+PUB Demo_BoxFilled(testtime) | iteration, c
 ' Draws random lines
     ser.str(string("Demo_BoxFilled - "))
     _timer_set := testtime
