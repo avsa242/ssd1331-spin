@@ -226,14 +226,11 @@ PUB ClockFreq(freq): curr_freq
 '   Any other value returns the current setting
     curr_freq := _sh_CLK
     case freq
-        800, 812, 824, 836, 848, 860, 872, 884, 896, 908, 920, 932, 944, 956,{
-}       968, 980:
-            freq := lookdownz(freq: 800, 812, 824, 836, 848, 860, 872, 884,{
-}           896, 908, 920, 932, 944, 956, 968, 980) << core#FOSCFREQ
+        800..980:
+            freq := ((freq-800) / 12) << core#FOSCFREQ
         other:
             curr_freq := (curr_freq >> core#FOSCFREQ) & core#FOSCFREQ_BITS
-            return lookupz (curr_freq: 800, 812, 824, 836, 848, 860, 872, 884,{
-}           896, 908, 920, 932, 944, 956, 968, 980)
+            return (curr_freq * 12) + 800
 
     _sh_CLK := ((_sh_CLK & core#FOSCFREQ_MASK) | freq)
     writereg(core#CLKDIV_FRQ, 1, @_sh_CLK)
