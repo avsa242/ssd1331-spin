@@ -596,17 +596,14 @@ PUB PowerSaving(state): curr_state
 
 PUB PrechargeLevel(level): curr_lvl
 ' Set first pre-charge voltage level (phase 2) of segment pins, in millivolts
-    case level := lookdown(level: 100, 110, 130, 140, 150, 170, 180, 190,{
-}   200, 220, 230, 240, 260, 270, 280, 300, 310, 320, 330, 350, 360, 370,{
-}   390, 400, 410, 430, 440, 450, 460, 480, 490, 500)
-        1..32:
-            _sh_PRECHGLEV := (level - 1) << 1
+    case level
+        100..500:
+            level := ((level * 10) - 100_0) / 12_9
+            _sh_PRECHGLEV := level << core#PRECHG_LVL
             writereg(core.PRECHGLVL, 1, @_sh_PRECHGLEV)
         other:
             curr_lvl := _sh_PRECHGLEV >> 1
-            return lookupz(curr_lvl: 100, 110, 130, 140, 150, 170, 180, 190,{
-}           200, 220, 230, 240, 260, 270, 280, 300, 310, 320, 330, 350, 360,{
-}           370, 390, 400, 410, 430, 440, 450, 460, 480, 490, 500)
+            return ((curr_lvl * 12_9) + 100_0) / 10
 
 PUB PrechargeSpeed(seg_a, seg_b, seg_c) | tmp[2]
 
