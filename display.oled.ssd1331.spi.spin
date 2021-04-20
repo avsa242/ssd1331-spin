@@ -66,6 +66,9 @@ VAR
     byte _sh_PHASE12PER, _sh_CLK, _sh_GRAYTABLE, _sh_PRECHGLEV, _sh_VCOMH, _sh_CMDLOCK
     byte _sh_HVSCROLL, _sh_FILL
 
+PUB Null{}
+' This is not a top-level object
+
 PUB Startx(CS_PIN, CLK_PIN, DIN_PIN, DC_PIN, RES_PIN, WIDTH, HEIGHT, ptr_drawbuff): status
 ' Start using custom I/O settings
 '   RES_PIN optional, but recommended (pin # only validated in Reset())
@@ -181,21 +184,21 @@ PUB AddrMode(mode): curr_mode
 
 PUB BoxAccel(sx, sy, ex, ey, boxcolor, fillcolor) | tmp[3]
 ' Draw a box, using the display's native/accelerated box function
-    sx := 0 #> sx <# _disp_width-1
-    sy := 0 #> sy <# _disp_height-1
-    ex := sx #> ex <# _disp_width-1
-    ey := sy #> ey <# _disp_height-1
+    sx := 0 #> sx <# _disp_xmax
+    sy := 0 #> sy <# _disp_ymax
+    ex := sx #> ex <# _disp_xmax
+    ey := sy #> ey <# _disp_ymax
 
     tmp.byte[0] := sx
     tmp.byte[1] := sy
     tmp.byte[2] := ex
     tmp.byte[3] := ey
-    tmp.byte[4] := rgb565_r8(boxcolor)
+    tmp.byte[4] := rgb565_r8(boxcolor) << 1
     tmp.byte[5] := rgb565_g8(boxcolor)
-    tmp.byte[6] := rgb565_b8(boxcolor)
-    tmp.byte[7] := rgb565_r8(fillcolor)
+    tmp.byte[6] := rgb565_b8(boxcolor) << 1
+    tmp.byte[7] := rgb565_r8(fillcolor) << 1
     tmp.byte[8] := rgb565_g8(fillcolor)
-    tmp.byte[9] := rgb565_b8(fillcolor)
+    tmp.byte[9] := rgb565_b8(fillcolor) << 1
     writereg(core#DRAWRECT, 10, @tmp)
 
 PUB ClearAccel{} | tmp
@@ -455,12 +458,12 @@ PUB FillAccelEnabled(state): curr_state
     curr_state := _sh_FILL
     case ||(state)
         0, 1:
-            state := ||(state) & 1
+            state := ||(state)
         other:
             return ((curr_state & 1) == 1)
 
     _sh_FILL := ((_sh_FILL & core#FILL_MASK) | state)
-    writereg(core#FILL, 1, @_sh_FILL)
+    writereg(core#FILLCPY, 1, @_sh_FILL)
 
 PUB Interlaced(state): curr_state
 ' Alternate every other display line:
@@ -480,18 +483,18 @@ PUB Interlaced(state): curr_state
 
 PUB LineAccel(sx, sy, ex, ey, color) | tmp[2]
 ' Draw a line, using the display's native/accelerated line function
-    sx := 0 #> sx <# _disp_width-1
-    sy := 0 #> sy <# _disp_height-1
-    ex := 0 #> ex <# _disp_width-1
-    ey := 0 #> ey <# _disp_height-1
+    sx := 0 #> sx <# _disp_xmax
+    sy := 0 #> sy <# _disp_ymax
+    ex := 0 #> ex <# _disp_xmax
+    ey := 0 #> ey <# _disp_ymax
 
     tmp.byte[0] := sx
     tmp.byte[1] := sy
     tmp.byte[2] := ex
     tmp.byte[3] := ey
-    tmp.byte[4] := rgb565_r8(color)
+    tmp.byte[4] := rgb565_r8(color) << 1
     tmp.byte[5] := rgb565_g8(color)
-    tmp.byte[6] := rgb565_b8(color)
+    tmp.byte[6] := rgb565_b8(color) << 1
     writereg(core#DRAWLINE, 7, @tmp)
 
 PUB MirrorH(state): curr_state
@@ -551,8 +554,8 @@ PUB Phase2Period(clks): curr_clks
 
 PUB PlotAccel(x, y, color) | tmp
 ' Draw a pixel, using the display's native/accelerated plot/pixel function
-    x := 0 #> x <# _disp_width-1
-    y := 0 #> y <# _disp_height-1
+    x := 0 #> x <# _disp_xmax
+    y := 0 #> y <# _disp_ymax
     tmp.byte[0] := x
     tmp.byte[1] := _disp_xmax
     tmp.byte[2] := y
@@ -560,11 +563,13 @@ PUB PlotAccel(x, y, color) | tmp
     
     writereg(core#SETCOLUMN, 2, @tmp)
     writereg(core#SETROW, 2, @tmp.byte[2])
-    time.usleep(3)
+    color &= $FFFF
 
     outa[_DC] := DATA
+    spi.deselectafter(false)
+    spi.wr_byte(color.byte[1])
     spi.deselectafter(true)
-    spi.wrword_lsbf(@color)
+    spi.wr_byte(color.byte[0])
 
 PUB Powered(state): curr_state
 ' Enable display power
