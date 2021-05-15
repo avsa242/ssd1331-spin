@@ -5,7 +5,7 @@
     Description: Driver for Solomon Systech SSD1331 RGB OLED displays
     Copyright (c) 2021
     Started: Apr 28, 2019
-    Updated: Apr 6, 2021
+    Updated: May 15, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -525,10 +525,6 @@ PUB MirrorV(state): curr_state
     _sh_REMAPCOLOR := ((_sh_REMAPCOLOR & core#COMREMAP_MASK) | state)
     writereg(core#SETREMAP, 1, @_sh_REMAPCOLOR)
 
-PUB NoOp{}
-' No-operation
-    writereg(core#NOP3, 0, 0)
-
 PUB Phase1Period(clks): curr_clks
 ' Set discharge/phase 1 period, in display clocks
     curr_clks := _sh_PHASE12PER
@@ -684,6 +680,10 @@ PUB WriteBuffer(ptr_buff, buff_sz)
     outa[_DC] := DATA
     spi.deselectafter(true)
     spi.wrblock_lsbf(ptr_buff, buff_sz)
+
+PRI NoOp{}
+' No-operation
+    writereg(core#NOP3, 0, 0)
 
 PRI writeReg(reg_nr, nr_bytes, ptr_buff)
 ' Write nr_bytes from ptr_buff to device
