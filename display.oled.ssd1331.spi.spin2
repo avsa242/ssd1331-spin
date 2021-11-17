@@ -48,7 +48,7 @@ CON
     BGR         = 1
 
 ' Character attributes
-    DRAWBG          = 1 << 0
+    DRAWBG      = 1 << 0
 
 OBJ
 
@@ -99,10 +99,13 @@ PUB Startx(CS_PIN, CLK_PIN, DIN_PIN, DC_PIN, RES_PIN, CLK_FREQ, WIDTH, HEIGHT, p
     return FALSE
 
 PUB Stop()
-
+' Turn off display, stop SPI engine, clear out variable space
     displayvisibility(ALL_OFF)
     powered(FALSE)
     spi.deinit()
+    longfill(@_CS, 0, 4)
+    wordfill(@_buff_sz, 0, 2)
+    bytefill(@_disp_width, 0, 30)
 
 PUB Defaults()
 ' Factory default settings

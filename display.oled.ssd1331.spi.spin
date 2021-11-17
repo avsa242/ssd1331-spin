@@ -5,7 +5,7 @@
     Description: Driver for Solomon Systech SSD1331 RGB OLED displays
     Copyright (c) 2021
     Started: Apr 28, 2019
-    Updated: Oct 16, 2021
+    Updated: Nov 17, 2021
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -47,7 +47,7 @@ CON
     BGR         = 1
 
 ' Character attributes
-    DRAWBG          = 1 << 0
+    DRAWBG      = 1 << 0
 
 OBJ
 
@@ -97,10 +97,13 @@ PUB Startx(CS_PIN, CLK_PIN, DIN_PIN, DC_PIN, RES_PIN, WIDTH, HEIGHT, ptr_drawbuf
     return FALSE
 
 PUB Stop{}
-
+' Turn off display, stop SPI engine, clear out variable space
     displayvisibility(ALL_OFF)
     powered(FALSE)
     spi.deinit{}
+    longfill(@_CS, 0, 6)
+    wordfill(@_buff_sz, 0, 2)
+    bytefill(@_disp_width, 0, 30)
 
 PUB Defaults{}
 ' Factory default settings
