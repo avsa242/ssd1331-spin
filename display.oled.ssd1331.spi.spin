@@ -269,6 +269,10 @@ PUB Char(ch) | gl_c, gl_r, lastgl_c, lastgl_r
             return
 #endif
 
+PUB CharAttrs(attrs)
+' Set character attributes
+    _char_attrs := attrs
+
 #ifdef GFX_DIRECT
 PUB Clear{} | tmp
 ' Clear the display
