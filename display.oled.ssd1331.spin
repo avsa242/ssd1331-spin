@@ -654,7 +654,7 @@ PUB Plot(x, y, color) | tmp
     spi.wr_byte(color.byte[0])
 #else
 ' buffered display
-    word[_ptr_drawbuffer][x + (y * _disp_width)] := ((color >> 8) & $FF) | ((color << 8) & $FF00)
+    word[_ptr_drawbuffer][x + (y * _disp_width)] := color
 #endif
 
 #ifndef GFX_DIRECT
@@ -806,7 +806,7 @@ PRI memFill(xs, ys, val, count)
 '   xs, ys: Start of region
 '   val: Color
 '   count: Number of consecutive memory locations to write
-    wordfill(_ptr_drawbuffer + ((xs << 1) + (ys * _bytesperln)), ((val >> 8) & $FF) | ((val << 8) & $FF00), count)
+    wordfill(_ptr_drawbuffer + ((xs << 1) + (ys * _bytesperln)), val, count)
 #endif
 
 PRI writeReg(reg_nr, nr_bytes, ptr_buff)
