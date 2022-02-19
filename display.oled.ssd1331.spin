@@ -339,19 +339,6 @@ PUB ColorDepth(format): curr_fmt
     _sh_REMAPCOLOR := ((_sh_REMAPCOLOR & core#COLORFMT_MASK) | format)
     writereg(core#SETREMAP, 1, @_sh_REMAPCOLOR)
 
-PUB COMHighLogicLevel(level): curr_lvl
-' Set logic high level threshold of COM pins relative to Vcc, in millivolts
-'   Valid values: 440, 520, 610, 710, 830
-'   Any other value returns the current setting
-    case level
-        440, 520, 610, 710, 830:
-            level := lookdown(level: 440, 520, 610, 710, 830)
-            _sh_VCOMH := lookup(level: $00, $10, $20, $30, $3E)
-            writereg(core#VCOMH, 1, @_sh_VCOMH)
-        other:
-            curr_lvl := lookdown(_sh_VCOMH: $00, $10, $20, $30, $3E)
-            return lookup(curr_lvl: 440, 520, 610, 710, 830)
-
 PUB Contrast(level)
 ' Set display contrast/brightness
 '   Valid values: 0..255
@@ -760,6 +747,19 @@ PUB Update{}
     outa[_DC] := DATA
     spi.deselectafter(true)
     spi.wrblock_lsbf(_ptr_drawbuffer, _buff_sz)
+
+PUB VCOMHVoltage(level): curr_lvl
+' Set COM output voltage, in millivolts
+'   Valid values: 440, 520, 610, 710, 830
+'   Any other value returns the current setting
+    case level
+        440, 520, 610, 710, 830:
+            level := lookdown(level: 440, 520, 610, 710, 830)
+            _sh_VCOMH := lookup(level: $00, $10, $20, $30, $3E)
+            writereg(core#VCOMH, 1, @_sh_VCOMH)
+        other:
+            curr_lvl := lookdown(_sh_VCOMH: $00, $10, $20, $30, $3E)
+            return lookup(curr_lvl: 440, 520, 610, 710, 830)
 
 PUB VertAltScan(state): curr_state
 ' Alternate Left-Right, Right-Left scanning, every other display line
