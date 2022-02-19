@@ -52,7 +52,7 @@ OBJ
 
     core    : "core.con.ssd1331"                ' HW-specific constants
     time    : "time"                            ' timekeeping methods
-    spi     : "com.spi.fast"                    ' Counter-based SPI (20MHzW/10R)
+    spi     : "com.spi.fast-nocs"               ' SPI engine (20MHzW/10R)
 
 VAR
 
@@ -74,10 +74,12 @@ PUB Startx(CS_PIN, CLK_PIN, DIN_PIN, DC_PIN, RES_PIN, WIDTH, HEIGHT, ptr_drawbuf
 '   RES_PIN optional, but recommended (pin # only validated in Reset())
     if lookdown(CS_PIN: 0..31) and lookdown(DC_PIN: 0..31) and {
 }   lookdown(DIN_PIN: 0..31) and lookdown(CLK_PIN: 0..31)
-        if (status := spi.init(CS_PIN, CLK_PIN, DIN_PIN, -1, core#SPI_MODE))
+        if (status := spi.init(CLK_PIN, DIN_PIN, -1, core#SPI_MODE))
             _CS := CS_PIN
             _DC := DC_PIN
             _RES := RES_PIN
+            outa[_CS] := 1
+            dira[_CS] := 1
             outa[_DC] := 1
             dira[_DC] := 1
             reset{}
@@ -648,10 +650,10 @@ PUB Plot(x, y, color) | tmp
     writereg(core#SETROW, 2, @tmp.byte[2])
 
     outa[_DC] := DATA
-    spi.deselectafter(false)
+    outa[_CS] := 0
     spi.wr_byte(color.byte[1])
-    spi.deselectafter(true)
     spi.wr_byte(color.byte[0])
+    outa[_CS] := 1
 #else
 ' buffered display
     word[_ptr_drawbuffer][x + (y * _disp_width)] := color
@@ -759,8 +761,9 @@ PUB Update{}
 #ifndef GFX_DIRECT
     { buffered displays only }
     outa[_DC] := DATA
-    spi.deselectafter(true)
+    outa[_CS] := 0
     spi.wrblock_lsbf(_ptr_drawbuffer, _buff_sz)
+    outa[_CS] := 1
 #endif
 
 PUB VCOMHVoltage(level): curr_lvl
@@ -793,9 +796,9 @@ PUB VertAltScan(state): curr_state
 PUB WriteBuffer(ptr_buff, buff_sz)
 ' Write alternate buffer to display
     outa[_DC] := DATA
-    spi.deselectafter(true)
+    outa[_CS] := 0
     spi.wrblock_lsbf(ptr_buff, buff_sz)
-
+    outa[_CS] := 1
 PRI NoOp{}
 ' No-operation
     writereg(core#NOP3, 0, 0)
@@ -816,17 +819,18 @@ PRI writeReg(reg_nr, nr_bytes, ptr_buff)
         $15, $21..$27, $75, $81..$83, $87, $8A..$8C, $A0..$A2, $A8, {
 }       $AD, $B0, $B1, $B3, $BB, $E3:
             outa[_DC] := CMD
-            spi.deselectafter(false)
+            outa[_CS] := 0
             spi.wr_byte(reg_nr)
-            spi.deselectafter(true)
             spi.wrblock_lsbf(ptr_buff, nr_bytes)
+            outa[_CS] := 1
             return
 
         { simple commands }
         $2E, $2F, $A4..$A7, $AC, $AE, $AF, $BC, $BD, $E3:
             outa[_DC] := CMD
-            spi.deselectafter(true)
+            outa[_CS] := 0
             spi.wr_byte(reg_nr)
+            outa[_CS] := 1
             return
 
 {
