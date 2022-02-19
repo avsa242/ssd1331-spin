@@ -207,7 +207,7 @@ PUB Bitmap(ptr_bmap, xs, ys, bm_wid, bm_lns) | offs, nr_pix
 #ifdef GFX_DIRECT
 PUB Box(sx, sy, ex, ey, color, filled) | tmp[3]
 ' Draw a box
-'   sx, sy: Start coordinates x0, y0
+'   sx, sy: Start coordinates
 '   ex, ey: End coordinates
 '   color:  Box color
 '   filled: Flag to set whether to fill the box or not
@@ -215,19 +215,25 @@ PUB Box(sx, sy, ex, ey, color, filled) | tmp[3]
     sy := 0 #> sy <# _disp_ymax
     ex := sx #> ex <# _disp_xmax
     ey := sy #> ey <# _disp_ymax
-    if filled
-        filled := color
-        fillaccelenabled(true)
-    else
-        filled := _bgcolor
-        fillaccelenabled(false)
+
+    if ( abs(filled) <> (_sh_FILL & 1) )        ' only call this if the filled
+        if (filled)                             '  param is different than the
+            fillaccelenabled(TRUE)              '  current filled setting
+        else                                    '  to avoid having to sending
+            fillaccelenabled(FALSE)             '  it to the display every time
+
+    { start, end coords }
     tmp.byte[0] := sx
     tmp.byte[1] := sy
     tmp.byte[2] := ex
     tmp.byte[3] := ey
+
+    { fg color - left-justified }
     tmp.byte[4] := rgb565_r8(color) << 1        ' R LSB is don't care
     tmp.byte[5] := rgb565_g8(color)
     tmp.byte[6] := rgb565_b8(color) << 1        ' B LSB is don't care
+
+    { bg color - left-justified }
     tmp.byte[7] := rgb565_r8(color) << 1
     tmp.byte[8] := rgb565_g8(color)
     tmp.byte[9] := rgb565_b8(color) << 1
