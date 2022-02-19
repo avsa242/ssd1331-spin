@@ -382,7 +382,8 @@ PUB ContrastC(level): curr_lvl
         other:
             return _sh_SETCONTRAST_C
 
-PUB CopyAccel(sx, sy, ex, ey, dx, dy) | tmp[2]
+#ifdef GFX_DIRECT
+PUB Copy(sx, sy, ex, ey, dx, dy) | tmp[2]
 ' Use the display's accelerated Copy Region function
 '   Valid values:
 '       sx, ex, dx: 0..95
@@ -425,6 +426,7 @@ PUB CopyAccel(sx, sy, ex, ey, dx, dy) | tmp[2]
     tmp.byte[4] := dx
     tmp.byte[5] := dy
     writereg(core.COPY, 6, @tmp)
+#endif
 
 PUB CopyAccelInverted(state): curr_state
 ' Enable inverted colors, when using CopyAccel()
