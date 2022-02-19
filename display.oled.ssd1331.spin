@@ -56,9 +56,10 @@ OBJ
 
 VAR
 
-    long _CS, _SCK, _MOSI, _DC, _RES
+    { I/O pins }
+    long _CS, _DC, _RES
 
-    ' shadow registers used since the display registers can't be read from
+    { shadow registers }
     byte _sh_SETCOLUMN, _sh_SETROW, _sh_SETCONTRAST_A, _sh_SETCONTRAST_B, _sh_SETCONTRAST_C
     byte _sh_MASTERCCTRL, _sh_SECPRECHG[3], _sh_REMAPCOLOR, _sh_DISPSTARTLINE, _sh_DISPOFFSET
     byte _sh_DISPMODE, _sh_MULTIPLEX, _sh_DIM, _sh_MASTERCFG, _sh_DISPONOFF, _sh_PWRSAVE
@@ -74,7 +75,9 @@ PUB Startx(CS_PIN, CLK_PIN, DIN_PIN, DC_PIN, RES_PIN, WIDTH, HEIGHT, ptr_drawbuf
     if lookdown(CS_PIN: 0..31) and lookdown(DC_PIN: 0..31) and {
 }   lookdown(DIN_PIN: 0..31) and lookdown(CLK_PIN: 0..31)
         if (status := spi.init(CS_PIN, CLK_PIN, DIN_PIN, -1, core#SPI_MODE))
-            longmove(@_CS, @CS_PIN, 5)
+            _CS := CS_PIN
+            _DC := DC_PIN
+            _RES := RES_PIN
             outa[_DC] := 1
             dira[_DC] := 1
             reset{}
@@ -83,7 +86,7 @@ PUB Startx(CS_PIN, CLK_PIN, DIN_PIN, DC_PIN, RES_PIN, WIDTH, HEIGHT, ptr_drawbuf
             _disp_xmax := _disp_width-1
             _disp_ymax := _disp_height-1
             _buff_sz := (_disp_width * _disp_height) * BYTESPERPX
-            _bytesperln := _disp_width * BYTESPERPX
+            _bytesperln := (_disp_width * BYTESPERPX)
             address(ptr_drawbuff)
             return
     ' if this point is reached, something above failed
@@ -96,12 +99,17 @@ PUB Stop{}
     displayvisibility(ALL_OFF)
     powered(FALSE)
     spi.deinit{}
-    longfill(@_CS, 0, 6)
-    wordfill(@_buff_sz, 0, 2)
-    bytefill(@_disp_width, 0, 30)
+    longfill(@_CS, 0, 3)
+    longfill(@_ptr_drawbuffer, 0, 14)           ' lib.gfx.bitmap.spin
+    wordfill(@_charpx_xmax, 0, 4)               ' lib.gfx.bitmap.spin
+    bytefill(@_charcell_w, 0, 6)                ' lib.gfx.bitmap.spin
+    bytefill(@_sh_SETCOLUMN, 0, 26)
 
 PUB Defaults{}
 ' Factory default settings
+#ifdef HAS_RESET
+    reset{}
+#else
     displayvisibility(ALL_OFF)
     displaystartline(0)
     displaylines(64)
@@ -113,6 +121,7 @@ PUB Defaults{}
     displaybounds(0, 0, 95, 63)
     clear{}
     displayvisibility(NORMAL)
+#endif
 
 PUB Preset_96x64{}
 ' Preset: 96px wide, setup for 64px height
@@ -547,9 +556,10 @@ PUB Interlaced(state): curr_state
     curr_state := _sh_REMAPCOLOR
     case ||(state)
         0, 1:
+            { invert logic for COMSPLIT bit }
             state := (||(state) ^ 1) << core#COMSPLIT
         other:
-            return not (((curr_state >> core#COMSPLIT) & 1) == 1)
+            return (((curr_state >> core#COMSPLIT) & 1) == 0)
 
     _sh_REMAPCOLOR := ((_sh_REMAPCOLOR & core#COMSPLIT_MASK) | state)
     writereg(core#SETREMAP, 1, @_sh_REMAPCOLOR)
@@ -606,7 +616,7 @@ PUB Phase1Period(clks): curr_clks
     case clks
         1..15:
         other:
-            return curr_clks & core#PHASE1
+            return (curr_clks & core#PHASE1)
 
     _sh_PHASE12PER := ((_sh_PHASE12PER & core#PHASE1_MASK) | clks)
     writereg(core#PRECHG, 1, @_sh_PHASE12PER)
@@ -618,7 +628,7 @@ PUB Phase2Period(clks): curr_clks
         1..15:
             clks <<= core#PHASE2
         other:
-            return (curr_clks >> core#PHASE2) & core#PHASE2
+            return ((curr_clks >> core#PHASE2) & core#PHASE2)
 
     _sh_PHASE12PER := ((_sh_PHASE12PER & core#PHASE2_MASK) | clks)
     writereg(core#PRECHG, 1, @_sh_PHASE12PER)
@@ -723,10 +733,10 @@ PUB Reset{}
     if lookdown(_RES: 0..31)
         dira[_RES] := 1
         outa[_RES] := 1
-        time.msleep(1)
         outa[_RES] := 0
-        time.msleep(10)
+        time.usleep(core#T_RES)
         outa[_RES] := 1
+        time.usleep(core#T_RES_COMPLT)
 
 PUB SubpixelOrder(order): curr_ord
 ' Set subpixel color order
@@ -747,6 +757,7 @@ PUB SubpixelOrder(order): curr_ord
 PUB Update{}
 ' Write the current display buffer to the display
 #ifndef GFX_DIRECT
+    { buffered displays only }
     outa[_DC] := DATA
     spi.deselectafter(true)
     spi.wrblock_lsbf(_ptr_drawbuffer, _buff_sz)
@@ -801,7 +812,7 @@ PRI memFill(xs, ys, val, count)
 PRI writeReg(reg_nr, nr_bytes, ptr_buff)
 ' Write nr_bytes from ptr_buff to device
     case reg_nr
-        ' commands w/parameters
+        { commands with parameters }
         $15, $21..$27, $75, $81..$83, $87, $8A..$8C, $A0..$A2, $A8, {
 }       $AD, $B0, $B1, $B3, $BB, $E3:
             outa[_DC] := CMD
@@ -811,7 +822,7 @@ PRI writeReg(reg_nr, nr_bytes, ptr_buff)
             spi.wrblock_lsbf(ptr_buff, nr_bytes)
             return
 
-        ' commands w/o parameters
+        { simple commands }
         $2E, $2F, $A4..$A7, $AC, $AE, $AF, $BC, $BD, $E3:
             outa[_DC] := CMD
             spi.deselectafter(true)
@@ -819,22 +830,23 @@ PRI writeReg(reg_nr, nr_bytes, ptr_buff)
             return
 
 {
-    --------------------------------------------------------------------------------------------------------
-    TERMS OF USE: MIT License
+TERMS OF USE: MIT License
 
-    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-    associated documentation files (the "Software"), to deal in the Software without restriction, including
-    without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the
-    following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-    The above copyright notice and this permission notice shall be included in all copies or substantial
-    portions of the Software.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-    LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-    --------------------------------------------------------------------------------------------------------
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 }
