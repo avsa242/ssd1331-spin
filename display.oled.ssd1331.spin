@@ -746,9 +746,11 @@ PUB SubpixelOrder(order): curr_ord
 
 PUB Update{}
 ' Write the current display buffer to the display
+#ifndef GFX_DIRECT
     outa[_DC] := DATA
     spi.deselectafter(true)
     spi.wrblock_lsbf(_ptr_drawbuffer, _buff_sz)
+#endif
 
 PUB VCOMHVoltage(level): curr_lvl
 ' Set COM output voltage, in millivolts
