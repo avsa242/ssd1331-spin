@@ -5,7 +5,7 @@
     Description: Driver for Solomon Systech SSD1331 RGB OLED displays
     Copyright (c) 2022
     Started: Apr 28, 2019
-    Updated: Oct 6, 2022
+    Updated: Oct 16, 2022
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -49,7 +49,7 @@ OBJ
 
     core    : "core.con.ssd1331"                ' HW-specific constants
     time    : "time"                            ' timekeeping methods
-    spi     : "com.spi.fast-nocs"               ' SPI engine (20MHzW/10R)
+    spi     : "com.spi.20mhz"               ' SPI engine (20MHzW/10R)
 
 VAR
 
@@ -224,9 +224,9 @@ PUB box(sx, sy, ex, ey, color, filled) | tmp[3]
 
     if ( ||(filled) <> (_sh_FILL & 1) )         ' only call this if the filled
         if (filled)                             '  param is different than the
-            fillaccelenabled(TRUE)              '  current filled setting
+            fill_accel_ena(TRUE)                '  current filled setting
         else                                    '  to avoid having to sending
-            fillaccelenabled(FALSE)             '  it to the display every time
+            fill_accel_ena(FALSE)               '  it to the display every time
 
     { start, end coords }
     tmp.byte[0] := sx
@@ -247,7 +247,9 @@ PUB box(sx, sy, ex, ey, color, filled) | tmp[3]
 #endif
 
 #ifdef GFX_DIRECT
-PUB char(ch) | gl_c, gl_r, lastgl_c, lastgl_r
+PUB tx = putchar
+PUB char = putchar
+PUB putchar(ch) | gl_c, gl_r, lastgl_c, lastgl_r
 ' Draw character from currently loaded font
     lastgl_c := _font_width-1
     lastgl_r := _font_height-1
