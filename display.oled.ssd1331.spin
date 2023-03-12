@@ -627,6 +627,44 @@ PUB reset{}
         outa[_RES] := 1
         time.usleep(core#T_RES_COMPLT)
 
+PUB scroll_fwid_right_cont(sy, ey, xstep, dly) | cmd_pkt[2]
+' Scroll a full-width vertical region of the display right, continuously
+'   (sy, ey): vertical region to scroll (sy: 0..95, ey: 0..63)
+'   xstep: number of columns/pixels to scroll horizontally in each step
+'   ystep: number of rows/pixels to scroll vertically in each step
+'   dly: inter-scroll step delay, in frames (6, 10, 100, 200)
+'   NOTE: ey must be greater than or equal to sy
+'   NOTE: scrolling is continuous, until stopped by calling scroll_stop()
+    scroll_stop{}
+    cmd_pkt.byte[0] := xstep
+    cmd_pkt.byte[1] := sy
+    cmd_pkt.byte[2] := ( (sy #> ey) - sy) + 1
+    cmd_pkt.byte[3] := 0
+    cmd_pkt.byte[4] := lookdownz(dly: 6, 10, 100, 200)
+    writereg(core#SCROLLSETUP, 5, @cmd_pkt)
+    command(core#SCROLLSTART)
+
+PUB scroll_fwid_right_up_cont(sy, ey, xstep, ystep, dly) | cmd_pkt[2]
+' Scroll a full-width vertical region of the display up and right, continuously
+'   (sy, ey): vertical region to scroll (sy: 0..95, ey: 0..63)
+'   xstep: number of rows/pixels to horizontally scroll vertical region in each step
+'   ystep: number of rows/pixels to scroll vertically in each step
+'   dly: inter-scroll step delay, in frames (6, 10, 100, 200)
+'   NOTE: ey must be greater than or equal to sy
+'   NOTE: scrolling is continuous, until stopped by calling scroll_stop()
+    scroll_stop{}
+    cmd_pkt.byte[0] := xstep
+    cmd_pkt.byte[1] := sy
+    cmd_pkt.byte[2] := ( (sy #> ey) - sy) + 1
+    cmd_pkt.byte[3] := ystep
+    cmd_pkt.byte[4] := lookdownz(dly: 6, 10, 100, 200)
+    writereg(core#SCROLLSETUP, 5, @cmd_pkt)
+    command(core#SCROLLSTART)
+
+PUB scroll_stop{}
+' Stop a running scroll command
+    command(core#SCROLLSTOP)
+
 PUB show{}
 ' Write the current display buffer to the display
 #ifndef GFX_DIRECT
@@ -719,7 +757,7 @@ PRI writereg(reg_nr, nr_bytes, ptr_buff)
 
 DAT
 {
-Copyright 2022 Jesse Burt
+Copyright 2023 Jesse Burt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
