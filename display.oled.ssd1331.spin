@@ -377,7 +377,7 @@ PUB copy_invert_ena(state): curr_state
     _sh_FILL := ((_sh_FILL & core#REVCOPY_MASK) | state)
     writereg(core#FILLCPY, 1, @_sh_FILL)
 
-PUB current_limit(divisor): curr_div
+PUB current_limit(divisor)
 ' Set master current limit divisor
     _sh_MASTERCCTRL := ((1 #> divisor <# 16) - 1)
     writereg(core#MASTERCURRENT, 1, @_sh_MASTERCCTRL)
@@ -637,7 +637,7 @@ PUB show{}
     outa[_CS] := 1
 #endif
 
-PUB subpix_order(order): curr_ord
+PUB subpix_order(order)
 ' Set subpixel color order
 '   Valid values:
 '       RGB (0): Red-Green-Blue order
@@ -660,7 +660,7 @@ PUB vcomh_voltage(level): curr_lvl
             curr_lvl := lookdown(_sh_VCOMH: $00, $10, $20, $30, $3E)
             return lookup(curr_lvl: 440, 520, 610, 710, 830)
 
-PUB vert_alt_scan(state): curr_state
+PUB vert_alt_scan(state)
 ' Alternate Left-Right, Right-Left scanning, every other display line
 '   Valid values: TRUE (-1 or 1), FALSE (0)
 '   Any other value returns the current setting
