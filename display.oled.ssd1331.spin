@@ -3,9 +3,9 @@
     Filename: display.oled.ssd1331.spin
     Author: Jesse Burt
     Description: Driver for Solomon Systech SSD1331 RGB OLED displays
-    Copyright (c) 2022
+    Copyright (c) 2023
     Started: Apr 28, 2019
-    Updated: Nov 27, 2022
+    Updated: Mar 12, 2023
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -49,7 +49,7 @@ OBJ
 
     core    : "core.con.ssd1331"                ' HW-specific constants
     time    : "time"                            ' timekeeping methods
-    spi     : "com.spi.20mhz"               ' SPI engine (20MHzW/10R)
+    spi     : "com.spi.20mhz"                   ' SPI engine
 
 VAR
 
@@ -68,7 +68,7 @@ PUB null{}
 
 PUB startx(CS_PIN, CLK_PIN, DIN_PIN, DC_PIN, RES_PIN, WIDTH, HEIGHT, ptr_drawbuff): status
 ' Start using custom I/O settings
-'   RES_PIN optional, but recommended (pin # only validated in Reset())
+'   RES_PIN optional, but recommended (pin # only validated in reset())
     if lookdown(CS_PIN: 0..31) and lookdown(DC_PIN: 0..31) and {
 }   lookdown(DIN_PIN: 0..31) and lookdown(CLK_PIN: 0..31)
         if (status := spi.init(CLK_PIN, DIN_PIN, -1, core#SPI_MODE))
@@ -170,14 +170,6 @@ PUB preset_96x{}
     clear{}
     visibility(NORMAL)
 
-PUB address(addr): curr_addr
-' Set framebuffer/display buffer address
-    case addr
-        $0004..$7FFF-addr:
-            _ptr_drawbuffer := addr
-        other:
-            return _ptr_drawbuffer
-
 PUB addr_mode(mode): curr_mode
 ' Set display internal addressing mode
 '   Valid values:
@@ -191,6 +183,14 @@ PUB addr_mode(mode): curr_mode
 
     _sh_REMAPCOLOR := ((_sh_REMAPCOLOR & core#SEGREMAP_MASK) | mode)
     writereg(core#SETREMAP, 1, @_sh_REMAPCOLOR)
+
+PUB address(addr): curr_addr
+' Set framebuffer/display buffer address
+    case addr
+        $0004..$7FFF-addr:
+            _ptr_drawbuffer := addr
+        other:
+            return _ptr_drawbuffer
 
 #ifdef GFX_DIRECT
 PUB bitmap(ptr_bmap, xs, ys, bm_wid, bm_lns) | offs, nr_pix
@@ -244,43 +244,6 @@ PUB box(sx, sy, ex, ey, color, filled) | tmp[3]
     tmp.byte[8] := (color & $07e0) >> 5
     tmp.byte[9] := (color & $1f) << 1           ' B LSB is don't care
     writereg(core#DRAWRECT, 10, @tmp)
-#endif
-
-#ifdef GFX_DIRECT
-PUB tx = putchar
-PUB char = putchar
-PUB putchar(ch) | gl_c, gl_r, lastgl_c, lastgl_r
-' Draw character from currently loaded font
-    lastgl_c := _font_width-1
-    lastgl_r := _font_height-1
-    case ch
-        CR:
-            _charpx_x := 0
-        LF:
-            _charpx_y += _charcell_h
-            if _charpx_y > _charpx_xmax
-                _charpx_y := 0
-        0..127:                                 ' validate ASCII code
-            ' walk through font glyph data
-            repeat gl_c from 0 to lastgl_c      ' column
-                repeat gl_r from 0 to lastgl_r  ' row
-                    ' if the current offset in the glyph is a set bit, draw it
-                    if byte[_font_addr][(ch << 3) + gl_c] & (|< gl_r)
-                        plot((_charpx_x + gl_c), (_charpx_y + gl_r), _fgcolor)
-                    else
-                    ' otherwise, draw the background color, if enabled
-                        if _char_attrs & DRAWBG
-                            plot((_charpx_x + gl_c), (_charpx_y + gl_r), _bgcolor)
-            ' move the cursor to the next column, wrapping around to the left,
-            ' and wrap around to the top of the display if the bottom is reached
-            _charpx_x += _charcell_w
-            if _charpx_x > _charpx_xmax
-                _charpx_x := 0
-                _charpx_y += _charcell_h
-            if _charpx_y > _charpx_ymax
-                _charpx_y := 0
-        other:
-            return
 #endif
 
 #ifdef GFX_DIRECT
@@ -403,6 +366,7 @@ PUB copy(sx, sy, ex, ey, dx, dy) | tmp[2]
 
 PUB copy_invert_ena(state): curr_state
 ' Enable inverted colors, when using copy()
+'   NOTE: This only affects the accelerated/direct-draw variant of copy()
     curr_state := _sh_FILL
     case ||(state)
         0, 1:
@@ -417,6 +381,22 @@ PUB current_limit(divisor): curr_div
 ' Set master current limit divisor
     _sh_MASTERCCTRL := ((1 #> divisor <# 16) - 1)
     writereg(core#MASTERCURRENT, 1, @_sh_MASTERCCTRL)
+
+PUB disp_lines(lines)
+' Set maximum number of display lines
+'   Valid values: 16..64 (clamped to range)
+    _sh_MULTIPLEX := ((16 #> lines <# 64) - 1)
+    writereg(core#SETMULTIPLEX, 1, @_sh_MULTIPLEX)
+
+PUB disp_offset(lines)
+' Set display offset/vertical shift
+    _sh_DISPOFFSET := (0 #> lines <# 63)
+    writereg(core#DISPLAYOFFSET, 1, @_sh_DISPOFFSET)
+
+PUB disp_start_line(line)
+' Set display start line
+    _sh_DISPSTARTLINE := (0 #> line <# 63)
+    writereg(core#STARTLINE, 1, @_sh_DISPSTARTLINE)
 
 PUB draw_area(sx, sy, ex, ey) | tmp
 ' Set drawable display region for subsequent drawing operations
@@ -437,39 +417,6 @@ PUB draw_area(sx, sy, ex, ey) | tmp
 
     writereg(core#SETROW, 2, @tmp)
 
-PUB invert_colors(state) | tmp
-' Invert display colors
-    if (state)
-        visibility(INVERTED)
-    else
-        visibility(NORMAL)
-
-PUB disp_lines(lines)
-' Set maximum number of display lines
-'   Valid values: 16..64 (clamped to range)
-    _sh_MULTIPLEX := ((16 #> lines <# 64) - 1)
-    writereg(core#SETMULTIPLEX, 1, @_sh_MULTIPLEX)
-
-PUB disp_offset(lines)
-' Set display offset/vertical shift
-    _sh_DISPOFFSET := (0 #> lines <# 63)
-    writereg(core#DISPLAYOFFSET, 1, @_sh_DISPOFFSET)
-
-PUB disp_start_line(line)
-' Set display start line
-    _sh_DISPSTARTLINE := (0 #> st_line <# 63)
-    writereg(core#STARTLINE, 1, @_sh_DISPSTARTLINE)
-
-PUB visibility(mode): curr_mode
-' Set display visibility
-    case mode
-        NORMAL, ALL_ON, ALL_OFF, INVERTED:
-            _sh_DISPMODE := mode + core#NORMALDISPLAY
-            writereg(_sh_DISPMODE, 0, 0)
-        other:
-            curr_mode := _sh_DISPMODE
-            return (_sh_DISPMODE - core#NORMALDISPLAY)
-
 PUB ext_supply_ena{} | tmp
 
     tmp := core#MASTERCFG_EXT_VCC
@@ -489,6 +436,13 @@ PUB interlace_ena(state)
     state := ((((state <> 0) & 1) ^ 1) << core#COMSPLIT)
     _sh_REMAPCOLOR := ((_sh_REMAPCOLOR & core#COMSPLIT_MASK) | state)
     writereg(core#SETREMAP, 1, @_sh_REMAPCOLOR)
+
+PUB invert_colors(state) | tmp
+' Invert display colors
+    if (state)
+        visibility(INVERTED)
+    else
+        visibility(NORMAL)
 
 #ifdef GFX_DIRECT
 PUB line(sx, sy, ex, ey, color) | tmp[2]
@@ -587,18 +541,6 @@ PUB point(x, y): pix_clr
     return word[_ptr_drawbuffer][x + (y * _disp_width)]
 #endif
 
-PUB powered(state): curr_state
-' Enable display power
-    case ||(state)
-        OFF, ON, DIM:
-            state := lookupz(||(state): core#DISPLAYOFF, core#DISPLAYON,{
-}           core#DISPLAYONDIM)
-            _sh_DISPONOFF := state
-            writereg(_sh_DISPONOFF, 0, 0)
-        other:
-            return lookdownz(_sh_DISPONOFF: core#DISPLAYOFF, core#DISPLAYON,{
-}           core#DISPLAYONDIM)
-
 PUB power_saving_ena(state)
 ' Enable display power saving mode
 '   Valid values: TRUE (-1 or 1), FALSE (0)
@@ -606,6 +548,17 @@ PUB power_saving_ena(state)
     state := lookupz(((state <> 0) & 1): core#PWRSAVE_DIS, core#PWRSAVE_ENA)
     _sh_PWRSAVE := state
     writereg(core#PWRMODE, 1, @_sh_PWRSAVE)
+
+PUB powered(state)
+' Enable display power
+    case ||(state)
+        OFF, ON, DIM:
+            state := lookupz(||(state): core#DISPLAYOFF, core#DISPLAYON,{
+}                                       core#DISPLAYONDIM)
+            _sh_DISPONOFF := state
+            command(_sh_DISPONOFF)
+        other:
+            return
 
 PUB precharge_lvl(level)
 ' Set first pre-charge voltage level (phase 2) of segment pins, in millivolts
@@ -627,6 +580,43 @@ PUB precharge_speed(seg_a, seg_b, seg_c) | tmp[2]
     tmp.byte[4] := seg_c
     writereg(core#PRECHGA, 5, @tmp)
 
+#ifdef GFX_DIRECT
+PUB tx = putchar
+PUB char = putchar
+PUB putchar(ch) | gl_c, gl_r, lastgl_c, lastgl_r
+' Draw character from currently loaded font
+    lastgl_c := _font_width-1
+    lastgl_r := _font_height-1
+    case ch
+        CR:
+            _charpx_x := 0
+        LF:
+            _charpx_y += _charcell_h
+            if _charpx_y > _charpx_xmax
+                _charpx_y := 0
+        0..127:                                 ' validate ASCII code
+            ' walk through font glyph data
+            repeat gl_c from 0 to lastgl_c      ' column
+                repeat gl_r from 0 to lastgl_r  ' row
+                    ' if the current offset in the glyph is a set bit, draw it
+                    if byte[_font_addr][(ch << 3) + gl_c] & (|< gl_r)
+                        plot((_charpx_x + gl_c), (_charpx_y + gl_r), _fgcolor)
+                    else
+                    ' otherwise, draw the background color, if enabled
+                        if _char_attrs & DRAWBG
+                            plot((_charpx_x + gl_c), (_charpx_y + gl_r), _bgcolor)
+            ' move the cursor to the next column, wrapping around to the left,
+            ' and wrap around to the top of the display if the bottom is reached
+            _charpx_x += _charcell_w
+            if _charpx_x > _charpx_xmax
+                _charpx_x := 0
+                _charpx_y += _charcell_h
+            if _charpx_y > _charpx_ymax
+                _charpx_y := 0
+        other:
+            return
+#endif
+
 PUB reset{}
 ' Reset the display controller
     if lookdown(_RES: 0..31)
@@ -637,16 +627,6 @@ PUB reset{}
         outa[_RES] := 1
         time.usleep(core#T_RES_COMPLT)
 
-PUB subpix_order(order): curr_ord
-' Set subpixel color order
-'   Valid values:
-'       RGB (0): Red-Green-Blue order
-'       BGR (1): Blue-Green-Red order
-    order := ((RGB #> order <# BGR) << core#SUBPIX_ORDER)
-
-    _sh_REMAPCOLOR := ((_sh_REMAPCOLOR & core#SUBPIX_ORDER_MASK) | order)
-    writereg(core#SETREMAP, 1, @_sh_REMAPCOLOR)
-
 PUB show{}
 ' Write the current display buffer to the display
 #ifndef GFX_DIRECT
@@ -656,6 +636,16 @@ PUB show{}
     spi.wrblock_lsbf(_ptr_drawbuffer, _buff_sz)
     outa[_CS] := 1
 #endif
+
+PUB subpix_order(order): curr_ord
+' Set subpixel color order
+'   Valid values:
+'       RGB (0): Red-Green-Blue order
+'       BGR (1): Blue-Green-Red order
+    order := ((RGB #> order <# BGR) << core#SUBPIX_ORDER)
+
+    _sh_REMAPCOLOR := ((_sh_REMAPCOLOR & core#SUBPIX_ORDER_MASK) | order)
+    writereg(core#SETREMAP, 1, @_sh_REMAPCOLOR)
 
 PUB vcomh_voltage(level): curr_lvl
 ' Set COM output voltage, in millivolts
@@ -676,8 +666,18 @@ PUB vert_alt_scan(state): curr_state
 '   Any other value returns the current setting
     state := ||(state) << core#COMLR_SWAP
     _sh_REMAPCOLOR := ((_sh_REMAPCOLOR & core#COMLR_SWAP_MASK) | (((state <> 0) & 1) {
-}   << core#COMLR_SWAP))
+}                       << core#COMLR_SWAP))
     writereg(core#SETREMAP, 1, @_sh_REMAPCOLOR)
+
+PUB visibility(mode): curr_mode
+' Set display visibility
+    case mode
+        NORMAL, ALL_ON, ALL_OFF, INVERTED:
+            _sh_DISPMODE := mode + core#NORMALDISPLAY
+            command(_sh_DISPMODE)
+        other:
+            curr_mode := _sh_DISPMODE
+            return (_sh_DISPMODE - core#NORMALDISPLAY)
 
 PUB wr_buffer(ptr_buff, buff_sz)
 ' Write alternate buffer to display
@@ -686,9 +686,12 @@ PUB wr_buffer(ptr_buff, buff_sz)
     spi.wrblock_lsbf(ptr_buff, buff_sz)
     outa[_CS] := 1
 
-PRI noop{}
-' No-operation
-    writereg(core#NOP3, 0, 0)
+PRI command(c)
+' Issue a command with no parameters to the display
+    outa[_DC] := CMD
+    outa[_CS] := 0
+    spi.wr_byte(c)
+    outa[_CS] := 1
 
 #ifndef GFX_DIRECT
 PRI memfill(xs, ys, val, count)
@@ -711,13 +714,7 @@ PRI writereg(reg_nr, nr_bytes, ptr_buff)
             spi.wrblock_lsbf(ptr_buff, nr_bytes)
             outa[_CS] := 1
             return
-
-        { simple commands }
-        $2E, $2F, $A4..$A7, $AC, $AE, $AF, $BC, $BD, $E3:
-            outa[_DC] := CMD
-            outa[_CS] := 0
-            spi.wr_byte(reg_nr)
-            outa[_CS] := 1
+        other:
             return
 
 DAT
