@@ -27,6 +27,7 @@ CON
     MOSI_PIN    = 2
     DC_PIN      = 3
     SCK_FREQ    = 10_000_000
+
     RES_PIN     = 4                             ' optional; -1 to disable
 ' --
 
@@ -52,7 +53,7 @@ PUB main() | y
 
     setup()
 
-    disp.strln(@"SSD130x on the")
+    disp.strln(@"SSD1331 on the")
     disp.strln(@"Parallax P2")
     disp.strln(@"HW-accelerated")
     disp.str(@"scrolling demo")

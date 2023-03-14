@@ -22,12 +22,12 @@ CON
     HEIGHT      = 64
 
 { SPI configuration }
-    CS_PIN      = 2'0
+    CS_PIN      = 0
     SCK_PIN     = 1
-    MOSI_PIN    = 0'2
+    MOSI_PIN    = 2
     DC_PIN      = 3
 
-    RES_PIN     = 4'-1                             ' optional; -1 to disable
+    RES_PIN     = 4                             ' optional; -1 to disable
 ' --
 
     BYTESPERLN  = WIDTH * disp#BYTESPERPX
@@ -53,7 +53,7 @@ PUB main{} | y
 
     setup()
 
-    disp.strln(@"SSD130x on the")
+    disp.strln(@"SSD1331 on the")
     disp.strln(@"Parallax P8X32A")
     disp.strln(@"HW-accelerated")
     disp.str(@"scrolling demo")
