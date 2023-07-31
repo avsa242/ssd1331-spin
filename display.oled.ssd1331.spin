@@ -5,7 +5,7 @@
     Description: Driver for Solomon Systech SSD1331 RGB OLED displays
     Copyright (c) 2023
     Started: Apr 28, 2019
-    Updated: Mar 12, 2023
+    Updated: Jul 31, 2023
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -45,6 +45,18 @@ CON
     RGB         = 0
     BGR         = 1
 
+    { default I/O settings; these can be overridden in the parent object }
+    { display dimensions }
+    WIDTH       = 96
+    HEIGHT      = 64
+
+    { SPI }
+    CS          = 0
+    SCK         = 1
+    MOSI        = 2
+    DC          = 3
+    RST         = 4
+
 OBJ
 
     core    : "core.con.ssd1331"                ' HW-specific constants
@@ -56,6 +68,8 @@ VAR
     { I/O pins }
     long _CS, _DC, _RES
 
+    word _fb[ (WIDTH * HEIGHT) ]
+
     { shadow registers }
     byte _sh_SETCOLUMN, _sh_SETROW, _sh_SETCONTRAST_A, _sh_SETCONTRAST_B, _sh_SETCONTRAST_C
     byte _sh_MASTERCCTRL, _sh_SECPRECHG[3], _sh_REMAPCOLOR, _sh_DISPSTARTLINE, _sh_DISPOFFSET
@@ -66,12 +80,16 @@ VAR
 PUB null{}
 ' This is not a top-level object
 
-PUB startx(CS_PIN, CLK_PIN, DIN_PIN, DC_PIN, RES_PIN, WIDTH, HEIGHT, ptr_drawbuff): status
+PUB start{}: status
+' Start the driver using default I/O settings
+    return startx(CS, SCK, MOSI, DC, RST, WIDTH, HEIGHT, @_fb)
+
+PUB startx(CS_PIN, CLK_PIN, DIN_PIN, DC_PIN, RES_PIN, DISP_W, DISP_H, ptr_drawbuff): status
 ' Start using custom I/O settings
 '   RES_PIN optional, but recommended (pin # only validated in reset())
-    if lookdown(CS_PIN: 0..31) and lookdown(DC_PIN: 0..31) and {
-}   lookdown(DIN_PIN: 0..31) and lookdown(CLK_PIN: 0..31)
-        if (status := spi.init(CLK_PIN, DIN_PIN, -1, core#SPI_MODE))
+    if ( lookdown(CS_PIN: 0..31) and lookdown(DC_PIN: 0..31) and lookdown(DIN_PIN: 0..31) and ...
+        lookdown(CLK_PIN: 0..31) )
+        if ( status := spi.init(CLK_PIN, DIN_PIN, -1, core#SPI_MODE) )
             _CS := CS_PIN
             _DC := DC_PIN
             _RES := RES_PIN
@@ -80,8 +98,8 @@ PUB startx(CS_PIN, CLK_PIN, DIN_PIN, DC_PIN, RES_PIN, WIDTH, HEIGHT, ptr_drawbuf
             outa[_DC] := 1
             dira[_DC] := 1
             reset{}
-            _disp_width := WIDTH
-            _disp_height := HEIGHT
+            _disp_width := DISP_W
+            _disp_height := DISP_H
             _disp_xmax := _disp_width-1
             _disp_ymax := _disp_height-1
             _buff_sz := (_disp_width * _disp_height) * BYTESPERPX
@@ -98,6 +116,11 @@ PUB stop{}
     visibility(ALL_OFF)
     powered(FALSE)
     spi.deinit{}
+    dira[_CS] := 0
+    dira[_DC] := 0
+    if ( lookdown(_RES: 0..31) )
+        dira[_RES] := 0
+
     longfill(@_CS, 0, 3)
     longfill(@_ptr_drawbuffer, 0, 14)           ' graphics.common.spinh
     wordfill(@_charpx_xmax, 0, 4)               ' graphics.common.spinh
@@ -553,8 +576,9 @@ PUB powered(state)
 ' Enable display power
     case ||(state)
         OFF, ON, DIM:
-            state := lookupz(||(state): core#DISPLAYOFF, core#DISPLAYON,{
-}                                       core#DISPLAYONDIM)
+            state := lookupz(||(state): core#DISPLAYOFF, ...
+                                        core#DISPLAYON, ...
+                                        core#DISPLAYONDIM )
             _sh_DISPONOFF := state
             command(_sh_DISPONOFF)
         other:
@@ -703,8 +727,8 @@ PUB vert_alt_scan(state)
 '   Valid values: TRUE (-1 or 1), FALSE (0)
 '   Any other value returns the current setting
     state := ||(state) << core#COMLR_SWAP
-    _sh_REMAPCOLOR := ((_sh_REMAPCOLOR & core#COMLR_SWAP_MASK) | (((state <> 0) & 1) {
-}                       << core#COMLR_SWAP))
+    _sh_REMAPCOLOR := ( (_sh_REMAPCOLOR & core#COMLR_SWAP_MASK) | ...
+                        (((state <> 0) & 1) << core#COMLR_SWAP) )
     writereg(core#SETREMAP, 1, @_sh_REMAPCOLOR)
 
 PUB visibility(mode): curr_mode

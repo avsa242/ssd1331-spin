@@ -5,7 +5,7 @@
     Author: Jesse Burt
     Copyright (c) 2023
     Started: Mar 12, 2023
-    Updated: Mar 12, 2023
+    Updated: Jul 31, 2023
     See end of file for terms of use.
     --------------------------------------------
 }
@@ -15,39 +15,16 @@ CON
     _xinfreq    = cfg#_xinfreq
 
 ' -- User-modifiable constants
-    LED         = cfg#LED1
     SER_BAUD    = 115_200
-
-    WIDTH       = 96
-    HEIGHT      = 64
-
-{ SPI configuration }
-    CS_PIN      = 0
-    SCK_PIN     = 1
-    MOSI_PIN    = 2
-    DC_PIN      = 3
-
-    RES_PIN     = 4                             ' optional; -1 to disable
 ' --
-
-    BYTESPERLN  = WIDTH * disp#BYTESPERPX
-    BUFFSZ      = (WIDTH * HEIGHT)
 
 OBJ
 
     cfg:    "boardcfg.flip"
     ser:    "com.serial.terminal.ansi"
-    disp:   "display.oled.ssd1331"
     time:   "time"
     fnt:    "font.5x8"
-
-VAR
-
-#ifndef GFX_DIRECT
-    word _framebuff[BUFFSZ]                     ' display buffer
-#else
-    byte _framebuff                             ' dummy VAR for GFX_DIRECT
-#endif
+    disp:   "display.oled.ssd1331" | WIDTH=96, HEIGHT=64, CS=0, SCK=1, MOSI=2, DC=3, RST=4
 
 PUB main{} | y
 
@@ -87,13 +64,11 @@ PUB setup{}
     ser.clear{}
     ser.strln(string("Serial terminal started"))
 
-    if disp.startx(CS_PIN, SCK_PIN, MOSI_PIN, DC_PIN, RES_PIN, WIDTH, HEIGHT, @_framebuff)
+    if ( disp.start() )
         ser.strln(string("SSD1331 driver started"))
-        disp.font_spacing(1, 0)
-        disp.font_scl(1)
-        disp.font_sz(fnt#WIDTH, fnt#HEIGHT)
-        disp.font_addr(fnt.ptr{})
+        disp.set_font(fnt.ptr(), fnt.setup())
         disp.preset_96x64_hi_perf{}
+        disp.char_attrs(disp.TERMINAL)
     else
         ser.strln(string("SSD1331 driver failed to start - halting"))
         repeat
@@ -103,6 +78,7 @@ PUB setup{}
     disp.clear{}
     disp.fgcolor(disp#MAX_COLOR)
 
+DAT
 {
 Copyright 2023 Jesse Burt
 
@@ -121,3 +97,4 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FO
 DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 }
+
