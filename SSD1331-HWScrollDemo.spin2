@@ -1,27 +1,29 @@
 {
-    --------------------------------------------
-    Filename: SSD1331-HWScrollDemo.spin2
-    Description: SSD1331 Hardware-accelerated scrolling demo (P2 version)
-    Author: Jesse Burt
-    Copyright (c) 2023
-    Started: Mar 12, 2023
-    Updated: Jul 31, 2023
-    See end of file for terms of use.
-    --------------------------------------------
+---------------------------------------------------------------------------------------------------
+    Filename:       SSD1331-HWScrollDemo.spin
+    Description:    SSD1331 Hardware-accelerated scrolling demo
+    Author:         Jesse Burt
+    Started:        Mar 12, 2023
+    Updated:        Feb 2, 2024
+    Copyright (c) 2024 - See end of file for terms of use.
+---------------------------------------------------------------------------------------------------
 }
+
+' Uncomment the below two lines to disable the use of a framebuffer in RAM,
+'   and draw directly to the display instead.
+'#define GFX_DIRECT
+'#pragma exportdef(GFX_DIRECT)
+
 CON
 
     _clkfreq    = cfg._clkfreq_def
     _xtlfreq    = cfg._xtlfreq
 
-' -- User-modifiable constants
-    SER_BAUD    = 2_000_000
-' --
 
 OBJ
 
     cfg:    "boardcfg.p2eval"
-    ser:    "com.serial.terminal.ansi"
+    ser:    "com.serial.terminal.ansi" | SER_BAUD=2_000_000
     fnt:    "font.5x8"
     disp:   "display.oled.ssd1331" | WIDTH=96, HEIGHT=64, CS=24, SCK=25, MOSI=26, DC=27, RST=28, ...
                                     SPI_FREQ=10_000_000
@@ -57,20 +59,20 @@ PUB main() | y
     disp.scroll_stop()
     repeat
 
+
 PUB setup()
 
-    ser.start(SER_BAUD)
-    waitms(30)
+    ser.start()
     ser.clear()
-    ser.strln(string("Serial terminal started"))
+    ser.strln(@"Serial terminal started")
 
     if ( disp.start() )
-        ser.strln(string("SSD1331 driver started"))
+        ser.strln(@"SSD1331 driver started")
         disp.set_font(fnt.ptr(), fnt.setup())
         disp.preset_96x64_hi_perf()
         disp.char_attrs(disp.TERMINAL)
     else
-        ser.strln(string("SSD1331 driver failed to start - halting"))
+        ser.strln(@"SSD1331 driver failed to start - halting")
         repeat
 
     disp.mirror_h(false)
@@ -78,9 +80,10 @@ PUB setup()
     disp.clear()
     disp.fgcolor(disp.MAX_COLOR)
 
+
 DAT
 {
-Copyright 2023 Jesse Burt
+Copyright 2024 Jesse Burt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,

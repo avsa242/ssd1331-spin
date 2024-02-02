@@ -41,6 +41,11 @@ P2/SPIN2:
 (other versions or toolchains not listed are __not supported__, and _may or may not_ work)
 
 
+## Hardware compatibility
+
+* Tested with Parallax #28087 (Waveshare SKU# 10514)
+
+
 ## Limitations
 
 * TBD
