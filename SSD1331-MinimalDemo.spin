@@ -1,12 +1,12 @@
 {
----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
     Filename:       SSD1331-MinimalDemo.spin
     Description:    Demo of the SSD1331 driver using minimal code
     Author:         Jesse Burt
     Started:        May 28, 2022
     Updated:        Feb 2, 2024
     Copyright (c) 2024 - See end of file for terms of use.
----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
 }
 
 ' Uncomment the below two lines to disable the use of a framebuffer in RAM,
@@ -14,10 +14,12 @@
 '#define GFX_DIRECT
 '#pragma exportdef(GFX_DIRECT)
 
+
 CON
 
     _clkmode    = xtal1 + pll16x
     _xinfreq    = 5_000_000
+
 
 OBJ
 

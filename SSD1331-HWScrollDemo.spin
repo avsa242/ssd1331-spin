@@ -1,12 +1,12 @@
 {
----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
     Filename:       SSD1331-HWScrollDemo.spin
     Description:    SSD1331 Hardware-accelerated scrolling demo
     Author:         Jesse Burt
     Started:        Mar 12, 2023
-    Updated:        Feb 2, 2024
+    Updated:        Aug 16, 2024
     Copyright (c) 2024 - See end of file for terms of use.
----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
 }
 
 ' Uncomment the below two lines to disable the use of a framebuffer in RAM,
@@ -16,17 +16,18 @@
 
 CON
 
-    _clkmode    = cfg#_clkmode
-    _xinfreq    = cfg#_xinfreq
+    _clkmode    = cfg._clkmode
+    _xinfreq    = cfg._xinfreq
 
 
 OBJ
 
     cfg:    "boardcfg.flip"
-    ser:    "com.serial.terminal.ansi" | SER_BAUD=115_200
     time:   "time"
     fnt:    "font.5x8"
+    ser:    "com.serial.terminal.ansi" | SER_BAUD=115_200
     disp:   "display.oled.ssd1331" | WIDTH=96, HEIGHT=64, CS=0, SCK=1, MOSI=2, DC=3, RST=4
+
 
 PUB main() | y
 
