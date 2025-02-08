@@ -4,8 +4,8 @@
     Description:    Driver for Solomon Systech SSD1331 RGB OLED displays
     Author:         Jesse Burt
     Started:        Apr 28, 2019
-    Updated:        Aug 16, 2024
-    Copyright (c) 2024 - See end of file for terms of use.
+    Updated:        Feb 8, 2025
+    Copyright (c) 2025 - See end of file for terms of use.
 ----------------------------------------------------------------------------------------------------
 }
 #define MEMMV_NATIVE wordmove
@@ -24,18 +24,17 @@ CON
     DC          = 3
     RST         = 4
     SPI_FREQ    = 6_666_666
-    BPP         = 16                            ' bits per pixel/color depth of the display
     { /// }
 
-
+    BPP         = 16                            ' bits per pixel/color depth of the display
     BYTESPERPX  = 1 #> (BPP/8)                  ' limit to minimum of 1
-    BPPDIV      = 1 #> (8 / BPP)                ' limit to range 1 .. (8/BPP)
+    BPPDIV      = 1 #> (8 / BPP)                ' limit to 1 or greater
+    BUFF_SZ     = (WIDTH * HEIGHT) / BPPDIV
+    MAX_COLOR   = (1 << BPP)-1
     XMAX        = WIDTH-1
     YMAX        = HEIGHT-1
     CENTERX     = WIDTH/2
     CENTERY     = HEIGHT/2
-    BUFF_SZ     = (WIDTH * HEIGHT) / BPPDIV     ' buffer size in words
-    MAX_COLOR   = (1 << BPP)-1
 
 
 ' Transaction type selection
@@ -799,7 +798,7 @@ PRI writereg(reg_nr, nr_bytes, ptr_buff)
 
 DAT
 {
-Copyright 2024 Jesse Burt
+Copyright 2025 Jesse Burt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
